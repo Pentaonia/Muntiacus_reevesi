@@ -50,6 +50,8 @@ library(scales)
 library(reshape2)
 library(ggbreak)
 library(ggstatsplot)
+library(spatstat)
+library(gridExtra)
 ```
 
 ## Seed
@@ -1229,6 +1231,70 @@ raster_prep_stan4bart(
 )
 ```
 
+# Spatial Cluster Analysis
+
+TODO: beschreiben
+
+```{r}
+
+load("./3_ready/model input/PA_AOI.Rdata")
+Presences <- all_data$train.df %>%
+    filter(pa == 1) %>%
+    add_row(
+        all_data$test.df %>%
+            filter(pa == 1)
+    )
+
+Pres.points <- all_data$train.points %>%
+    filter(pa == 1) %>%
+    add_row(all_data$test.points %>% filter(pa == 1))
+
+Presences.join <- Pres.points %>% cbind(Presences) %>% mutate(Name = seq(1, nrow(.), 1)) %>% st_transform()
+
+AOI <- st_read("./3_ready/AOI_border.shp")
+
+autocorr <- list()
+
+## GB
+autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("GBR", "IRL"),]])
+Window(autocorr$muntgbif_GB_ppp) <- as.owin(AOI[AOI$Name %in% c("GBR", "IRL"),])
+unitname(autocorr$muntgbif_GB_ppp) <- "m/m"
+
+
+## Taiwan
+autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("TWN"),]])
+Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN"),])
+unitname(autocorr$muntgbif_TW_ppp) <- "m/m"
+
+# Test against 100 Monte Carlo Iterations of complete spatial randomness
+autocorr$GB_fest <-  envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
+autocorr$TW_fest <-  envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
+
+## GB Plot
+autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r/1000, y = obs)) +
+  geom_line(aes(), col = "black", lwd = 1.5) +
+  geom_line(aes(y = theo), col = "red", lwd = 1.5) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "red", alpha = 0.5, show.legend = FALSE) +
+  scale_colour_manual(name = 'F(r) statistics', 
+    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
+  ylab("F(r)") + xlab("Radius (km)")+
+  ggtitle("A)")
+
+## TW Plot
+autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r/1000, y = obs)) +
+  geom_line(aes(col = "black"), lwd = 1.5) +
+  geom_line(aes(y = theo, col = "red"), lwd = 1.5, show.legend = F) +
+  geom_ribbon(aes(ymin = lo, ymax = hi, fill = "red"), alpha = 0.5, show.legend = FALSE) +
+  scale_colour_manual(name = 'F(r) statistics', 
+    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
+  ylab("F(r)") + xlab("Radius (km)") +
+  ggtitle("B)")
+
+
+#Inter-event distribution for Taiwanese and Brittish muntjac occurrences
+grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55,3))
+
+```
 
 # Collinearity
 ## Test
