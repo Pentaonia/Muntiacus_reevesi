@@ -4,8 +4,6 @@ subtitle: "Potential distribution of the small Deer (Cervidae) species Reeves’
 author: "Louis-Marvin Sander"
 date: 
 output:
-  word_document:
-    toc: true
   html_notebook:
     toc: true
     toc_float: true
@@ -18,8 +16,8 @@ output:
 knitr::opts_chunk$set(eval = FALSE)
 ```
 
-Generate the data outside of the repository.
 
+Generate the data outside of the repository.
 ```{r}
 setwd(paste0(getwd(), "/.."))
 ```
@@ -27,7 +25,6 @@ setwd(paste0(getwd(), "/.."))
 # Preparation
 
 ## Packages
-
 ```{r}
 library(raster)
 library(tidyverse)
@@ -55,7 +52,6 @@ library(gridExtra)
 ```
 
 ## Seed
-
 ```{r}
 set.seed(2121997)
 ```
@@ -67,16 +63,19 @@ set.seed(2121997)
 `%!in%` <- Negate(`%in%`)
 ```
 
-### Get n Minimal/Maximal results
-
+### Get n Minimal/Maximal result
 List the first n results of a dataframe sorted by a column. Interesting for seeing the most collinear values late on.
 
 Input:
-- a = data frame/tibble that sould be displayed
-- b = column to sort the results
-- c = number of rows that sould be displayed
-- mode = c("max", "min") means either sort decreasing or increasing.
 
+- __a__ = data frame/tibble that sould be displayed
+- __b__ = column to sort the results
+- __c__ = number of rows that sould be displayed
+- __mode__ = c("max", "min") means either sort decreasing or increasing.
+
+Output:
+
+- __result__ = ordered tibble with nrow() = c
 
 ```{r}
 owncount <- function(a, b, c = ncol(a), mode = c("max", "min")) {
@@ -90,25 +89,27 @@ owncount <- function(a, b, c = ncol(a), mode = c("max", "min")) {
 ```
 
 ### Data Preparation
-
 It automatically appends the data set with randomly sampled absence points based on the extent of the SpatRaster and creates data frames that can be used in the modelling process
 The data have to be in the same coordinate reference system.
 
 Attention: Here is implemented directly the rule of thumb after Huberty 1994 for splitting into train and test data.
 
 Inputs:
-- start = environment as a SpatRaster with different layers as predictors
-- species = sf object of occurrence points
-- most.important = vector of variables threatened as important ones that should be extracted from the SpatRaster
-- randoms = same as most.important but for the random variables
+
+- __start__ = environment as a SpatRaster with different layers as predictors
+- __species__ = sf object of occurrence points
+- __most.important__ = vector of variables threatened as important ones that should be extracted from the SpatRaster
+- __randoms__ = same as most.important but for the random variables
 
 Output:
+
 List of:
-- train.points = sf object of model training points
-- test.points = sf object of model test points
-- train.df = data frame of variables at train points + pa = column for presence absence
-- test.df = data frame of variables at test points + pa = column for presence absence
-- removedNA = removed points due to NA in an environmental layer
+
+- __train.points__ = sf object of model training points
+- __test.points__ = sf object of model test points
+- __train.df__ = data frame of variables at train points + pa = column for presence absence
+- __test.df__ = data frame of variables at test points + pa = column for presence absence
+- __removedNA__ = removed points due to NA in an environmental layer
 
 ```{r}
 fuzzySim::percentTestData(5) # in our case at the end 5 main variables
@@ -197,23 +198,59 @@ extraction_format <- function(start, species, most.important = NULL, randoms = N
 }
 ```
 
-### Multi collinearity
+### wbt_resample bugfix
 
-Adapted "multicol" function from the "fuzzySim" to display more information in the result.
+I dont know when it is fixed, therefore I included the fixed function here.
+For documentation see: [WhiteboxTools](https://cran.r-project.org/web/packages/whitebox/whitebox.pdf).
+
+```{r}
+wbt_resample <- function(
+    inputs, output, cell_size = NULL, base = NULL, method = "cc",
+    wd = NULL, verbose_mode = FALSE, compress_rasters = FALSE,
+    command_only = FALSE) {
+    wbt_init()
+    args <- ""
+    args <- paste(args, paste0("--inputs=", whitebox:::wbt_file_path(inputs)))
+    args <- paste(args, paste0("--output=", whitebox:::wbt_file_path(output)))
+    if (!is.null(cell_size)) {
+        args <- paste(args, paste0("--cell_size=", cell_size))
+    }
+    if (!is.null(base)) {
+        args <- paste(args, paste0("--base=", whitebox:::wbt_file_path(base)))
+    }
+    if (!is.null(method)) {
+        args <- paste(args, paste0("--method=", method))
+    }
+    if (!missing(wd)) {
+        args <- paste(args, paste0("--wd=", whitebox:::wbt_file_path(wd)))
+    }
+    if (!missing(compress_rasters)) {
+        args <- paste(args, paste0("--compress_rasters=", compress_rasters))
+    }
+    tool_name <- "resample"
+    wbt_run_tool(tool_name, args, verbose_mode, command_only)
+}
+```
+
+
+### Multi collinearity
+Adapted "multicol" function from the "fuzzySim"-Package to display more information in the result.
 
 Input:
-- vars = data frame of environmental conditions
-- model = not needed in this context
-- reorder = order result at the end?
+
+- __vars__ = data frame of environmental conditions
+- __model__ = not needed in this context
+- __reorder__ = order result at the end?
 
 Output:
+
 - result = tibble with several columns, nrow(result) = ncol(vars)
-    - Rsquared = R² of the built model
-    - Tolerance = 1 - R²
-    - VIF = Variance Inflation Factor 1 / (1 - R²)
-    - count = Number of collinear variables
-    - significant_vars = Significant collinear variables
-    - insignificant_vars = Not collinear variables
+    - __Rsquared__ = R² of the built model
+    - __Tolerance__ = 1 - R²
+    - __VIF__ = Variance Inflation Factor 1 / (1 - R²)
+    - __count__ = Number of collinear variables
+    - __significant_vars__ = Significant collinear variables
+    - __insignificant_vars__ = Not collinear variables
 
 ```{r}
 multicol_own <- function(vars = NULL, model = NULL, reorder = TRUE) {
@@ -260,16 +297,17 @@ multicol_own <- function(vars = NULL, model = NULL, reorder = TRUE) {
 
 
 ### Nearest distance
-
 Creation of a vector that represents the distance of a point to the nearest feature.
 This can be used if there is no raster available, for example if you want to use "distance to streets/urban areas".
 
 Input:
-- a = sf object, here presence/absence points
-- b = sf object, here polygons of cities, lines of streets, ... it can also be a named list if more than one variable sould be added
+
+- __a__ = sf object, here presence/absence points
+- __b__ = sf object, here polygons of cities, lines of streets, ... it can also be a named list if more than one variable sould be added
 
 Output:
-- distance = Distance of every point in _a_ to the nearest polygon in _b_
+
+- __distance__ = Distance of every point in _a_ to the nearest polygon in _b_
 
 ```{r}
 nearestdistance_to <- function(a, b) {
@@ -288,16 +326,17 @@ nearestdistance_to <- function(a, b) {
 ```
 
 ### Weights 
-
 Creation of weights according to the number of features in a radius, means 0.5/n where n = number of points in a radius. 
 That means, if n = 1 than the occurrence has one neighbor, therefore 0.5/1 = 0.5 and bot occurrences are weighted 0.5.
 Default: the radius of a circle that results in the average territorial size of the muntjac according to ...
 
 Input:
-- sf_geom = sf object of points, here muntjac Occurrences
-- buffer_radius = radius of a circle that results in the size of an average territory
+
+- __sf_geom__ = sf object of points, here muntjac occurrences
+- __buffer_radius__ = radius of a circle that results in the size of an average territory
 
 Output:
+
 - vector of length(sf_geom) with values [1,0[.
 
 ```{r}
@@ -315,21 +354,46 @@ nbfunction <- function(sf_geom, buffer_radius = 298.5411) {
 }
 ```
 
+### Brier Score
+Get data out of a ROCR-Object and calculate the brier score.
 
-### stan4bart raster/terra prediction wrapper
+Input: 
 
-TODO:
-
-Predicts a stan4bart model to a SpatRaster of environmental variables.
-Only recommended if the raster is relatively small, low number of predictions or predictions to different raster are pending.
-If you often use the same raster stack for prediction, use the other function where you have to export your raster as table first. Work through found at ...! 
-
-Input:
-- model = stan4bart object with "keepTrees = T"
-- raster = SpatRaster with new environment (for prediction) or old environment (for inter/extrapolation)
+- ROCR-Object
 
 Output:
-- new_raster = Predicted raster
+
+- Brier Score
+
+```{r}
+get_and_calc_bri <- function(x) {
+    tru <- x@labels %>%
+        unlist() %>%
+        as.character() %>%
+        as.numeric()
+    preds <- x@predictions %>% unlist()
+
+    return(
+        (1 / length(tru) * sum((preds - tru)^2))
+    )
+}
+```
+
+
+### Easy prediction wrapper - NOT RECOMMENDED!
+Predicts a stan4bart model to a SpatRaster of environmental variables.
+Only recommended if the raster is relatively small, low number of predictions or predictions to different raster are pending.
+If you often use the same raster stack for prediction, use the other function where you have to export your raster as table first.
+
+Input:
+
+- __model__ = stan4bart object with "keepTrees = T"
+- __raster__ = SpatRaster with new environment (for prediction) or old environment (for inter/extrapolation)
+- __type__ = one of types of predict.stan4bartFit
+
+Output:
+
+- __new_raster__ = Predicted raster
 
 ```{r}
 raster_pred_stan4bart <- function(model, raster, type = "ev") {
@@ -369,45 +433,22 @@ raster_pred_stan4bart <- function(model, raster, type = "ev") {
 }
 ```
 
-### Brier Score
-
-Get data out of a ROCR-Object and calculate the brier score.
-
-Input: 
-- ROCR-Object
-
-Output:
-- Brier Score
-
-```{r}
-get_and_calc_bri <- function(x) {
-    tru <- x@labels %>%
-        unlist() %>%
-        as.character() %>%
-        as.numeric()
-    preds <- x@predictions %>% unlist()
-
-    return(
-        (1 / length(tru) * sum((preds - tru)^2))
-    )
-}
-```
-
-
 ### Efficient prediction
 
 #### Raster preparation
-
 Function that converts a raster into a table for efficient reuse in prediction function.
 
 Input:
-- in_raster = Raster stack to be converted
-- in_vars = Names of the layers that should be converted
-- save.path = Path where to store + Base name of the documents. Attention: File ending and identifier are added automatically.
+
+- __in_raster__ = Raster stack to be converted
+- __in_vars__ = Names of the layers that should be converted
+- __save.path__ = Path where to store + Base name of the documents. Attention: File ending and identifier are added automatically.
+
 
 Output = Two output files:
-- *_na-free.txt = Raster as table, every column that does not match "complete.cases()" removed.
-- *_comp_cases.txt = Vector of line numbers that match "complete.cases()"
+
+- __*_na-free.txt__ = Raster as table, every column that does not match "complete.cases()" removed.
+- __*_comp_cases.txt__ = Vector of line numbers that match "complete.cases()"
 
 ```{r}
 raster_prep_stan4bart <- function(in_raster, in_vars, save.path = tempdir()) {
@@ -429,8 +470,26 @@ raster_prep_stan4bart <- function(in_raster, in_vars, save.path = tempdir()) {
 ```
 
 #### Fast prediction
+Prediction of a stan4bart-object to new data that has been prepaired with the "raster_prep_stan4bart"-function.
 
-TODO: Input output
+Input:
+
+- __model__ = stan4bart-object
+- __newdata__ = object created with read.table("*_na-free.txt")
+- __complete_cases__ = object created with read.table("*_comp_cases.txt")
+- __base_raster__ = raster with the same properties as the raster fron which the newdata object was created --> the function needs to know on which basis the resulting raster has to be built.
+- __type__ = one of types of predict.stan4bartFit
+- __coltake__ = object created in the for-loop lateron, is only needed if you want only a part of the iterations/chains in your result. It simply is a vector including values [1, iterations*chains] for every iteration (of chains) that should be used.
+
+As the predicted chains and iterations are combined to one big matrix (colbind, one column per iteration) it aplies for creating __coltake__:
+
+- 1. Chain [1, iterations-burn_in]
+- 2. Chain [iterations-burn_in+1, (iterations-burn_in)*2]
+- n. Chain [(iterations-burn_in)\*(n-1)+1, (iterations-burn_in)\*n]
+
+Output:
+
+- fast_result = Raster with the same properties than __base_raster__.
 
 ```{r}
 fast_predict <- function(model, newdata, complete_cases, base_raster, type = "ev", coltake = NULL) {
@@ -468,24 +527,20 @@ fast_predict <- function(model, newdata, complete_cases, base_raster, type = "ev
 
     return(fast_result)
 }
-
-# fast_predict <- function(model, newdata, complete_cases, base_raster, type = "ev", coltake = NULL) {
-#     new_data <- predict(
-#         object = model,
-#         newdata = newdata,
-#         type = type,
-#         combine_chains = TRUE,
-#         sample_new_levels = TRUE
-#     )
-
-
-#     return(new_data)
-# }
 ```
 
 #### Finding the threshold
+Here the function tries to find the threshold for a 1/0 classification of a map, according to a specific accurracy/confidence.
 
-TODO: input output
+Input:
+
+- __eval_list__ = ROCR-Object
+- __thresh__ = confidence/accurracy threshold
+
+Output:
+
+- 1/0 classification threshold of [1,0]
+
 
 ```{r}
 thresh_01 <- function(eval_list, thresh = 0.925) {
@@ -501,7 +556,6 @@ thresh_01 <- function(eval_list, thresh = 0.925) {
 
 
 ## Directories
-
 ```{r}
 dir.create("./1_input/")
 dir.create("./2_work")
@@ -509,20 +563,16 @@ dir.create("./3_ready")
 dir.create("./4_output")
 ```
 
-## Variables
-
-### Boundaries World and Area of interest
-
-#### Choosen Coutries as AOI
-
+## Variables 
+### Boundaries World and Area of interest {.tabset}
+Choosen Coutries as area of interest (AOI)
 ```{r}
 countryCodes <- tibble(isoA3 = vector(length = 40))
 countryCodes$isoA3 <- c("AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR", "TWN", "CHE", "NOR", "BLR", "UKR", "SRB", "MKD", "MNE", "BIH", "HRV", "MDA", "CHN")
 countryCodes$isoA2 <- countrycode(countryCodes$isoA3, "iso3c", "iso2c")
 ```
 
-#### World Border
-
+#### World border 
 Downloaded from [opendatasoft.com](https://public.opendatasoft.com/explore/dataset/world-administrative-boundaries/information/?location=2,44.59047,46.93359&basemap=jawg.light&dataChart=eyJxdWVyaWVzIjpbeyJjb25maWciOnsiZGF0YXNldCI6IndvcmxkLWFkbWluaXN0cmF0aXZlLWJvdW5kYXJpZXMiLCJvcHRpb25zIjp7fX0sImNoYXJ0cyI6W3siYWxpZ25Nb250aCI6dHJ1ZSwidHlwZSI6ImNvbHVtbiIsImZ1bmMiOiJDT1VOVCIsInNjaWVudGlmaWNEaXNwbGF5Ijp0cnVlLCJjb2xvciI6IiNGRjUxNUEifV0sInhBeGlzIjoic3RhdHVzIiwibWF4cG9pbnRzIjo1MCwic29ydCI6IiJ9XSwidGltZXNjYWxlIjoiIiwiZGlzcGxheUxlZ2VuZCI6dHJ1ZSwiYWxpZ25Nb250aCI6dHJ1ZX0%3D).
 
 ```{r}
@@ -537,9 +587,8 @@ st_write(world_border, "./3_ready/WORLD_border.shp")
 world_border <- st_read(("./3_ready/WORLD_border.shp"))
 ```
 
-#### AOI Border
-
-
+#### AOI border
+Crop to AOI border
 ```{r}
 AOI <- world_border
 
@@ -551,10 +600,8 @@ st_write(AOI, "./3_ready/AOI_border.shp", append = F)
 AOI <- st_read("./3_ready/AOI_border.shp")
 ```
 
-### Response (Muntiacus reevesi occurrences)
-
+### Response (Muntiacus reevesi occurrences) {.tabset}
 #### GBIF
-
 Source: [GBIF](https://www.gbif.org/occurrence/download/0065916-230224095556074)
 
 ```{r}
@@ -572,8 +619,7 @@ muntgbif %<>%
 ```
 
 #### Own extraction
-
-Please find the document in the "important_files" directory.
+Please find the document in the "important_files" directory and copy it to the "1_input" directory.
 
 ```{r}
 muntown <- readxl::read_xlsx("./1_input/Own_muntiac.xlsx")
@@ -588,7 +634,6 @@ muntown %<>%
 ```
 
 #### NBN Atlas 
-
 Source: [NBN Atlas](https://ror.org/00mcxye41)
 
 ```{r}
@@ -608,10 +653,9 @@ colnames(muntnbn)[1] <- "year"
 ```
 
 #### Schleswig Holstein
-
 Source: [Landesamt für Landwirtschaft, Umwelt und ländliche Räume in Schleswig-Holstein](https://www.schleswig-holstein.de/DE/landesregierung/ministerien-behoerden/LLUR/llur_node.html), received from [Dipl.-Geogr. Heiko Schmüser (CAU Kiel)](https://www.landscape-ecology.uni-kiel.de/de/team-1/heiko-schmueser)
 
-Please find the document in the "important_files" directory.
+Please find the document in the "important_files" directory and copy it to the "1_input" directory.
 
 ```{r}
 muntsw <- st_read("./1_input/schmueser muntjac/20221219_MuntjakDaten_Multibase.shp")
@@ -630,7 +674,6 @@ muntsw$year %<>% gsub(".*/", "", .) %>% as.numeric()
 ```
 
 #### Combine to one dataset
-
 ```{r}
 all_occs <- add_row(muntgbif, muntnbn) %>%
     add_row(muntown) %>%
@@ -644,7 +687,6 @@ st_write(all_occs, "./2_work/all_occs.shp")
 ```
 
 ### Water bodies
-
 Sources: [water bodies](https://hub.arcgis.com/content/esri::world-water-bodies/about) and [linear waters](https://www.arcgis.com/home/item.html?id=273980c20bc74f94ac96c7892ec15aff)
 
 Preprocessing via QGIS:
@@ -663,7 +705,6 @@ water <- st_read("./2_work/water_simple.shp")
 ```
 
 #### Check occurrences of ones in waterbodies
-
 ```{r}
 water_dubles <- all_occs %>% st_filter(water, .predicate = st_intersects)
 
@@ -673,9 +714,7 @@ st_write(all_occs, "./3_ready/all_occs.shp", append = F)
 ```
 
 ### Road data
-
 Source: [Natural Earth](https://naciscdn.org/naturalearth/10m/cultural/ne_10m_roads.zip)
-
 ```{r}
 download.file(
     url = "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_roads.zip",
@@ -698,9 +737,7 @@ st_write(roads, "./3_ready/roads.shp", append = F)
 ```
 
 ### Urban areas
-
 Source: [Natural Earth](https://naciscdn.org/naturalearth/10m/cultural/ne_10m_urban_areas.zip)
-
 ```{r}
 download.file(
     url = "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_urban_areas.zip",
@@ -722,7 +759,6 @@ st_write(urban, "./3_ready/urban.shp", append = F)
 ```
 
 ### Elevation + Slope
-
 ```{r}
 elevation <- elevation_global(res = 0.5, path = "./1_input/elevation")
 
@@ -743,7 +779,6 @@ slope <- rast("./2_work/slope.tif")
 ```
 
 ### Climate
-
 ```{r}
 climate <- worldclim_global(
     var = "bio",
@@ -760,7 +795,6 @@ climate <- rast("./2_work/climate.tif")
 ```
 
 ### Landcover
-
 Get the data and prepare them for stacking with climate.
 
 ```{r}
@@ -785,27 +819,29 @@ merge(mergerast, landCover, filename = "./2_work/landcover_merge.tif")
 landCover <- rast("./2_work/landcover_merge.tif")
 ```
 
-### Distance maps to Urban areas, Water and streets
+### Distance maps to Urban areas, Water and streets {.tabset}
 #### Step I
-The fist step was the rasterization of the urban areas, waters and streets in QGIS. R works too ineficient on large rasters.  You can also try the ´fasterize´ function but its not working with MULTILINESTRING.
+The fist step was the rasterization of the urban areas, waters and streets in QGIS. R works too ineficient on large rasters. You can also try the ´fasterize´ function but its not working with MULTILINESTRING at the moment.
 
 #### Step II
-
 NAs have to be set to 0 for further processing in whitebox. Additionally the rasters were croped to the AOI.
 
 ```{r}
+# Roads
 WORLD_road_distance <- rast("./2_work/WORLD_roads_raster.tif")
 WORLD_road_distance <- ifel(is.na(WORLD_road_distance), 0, WORLD_road_distance)
 writeRaster(WORLD_road_distance, "./2_work/WORLD_roads_raster_0_1.tif", overwrite = T)
 WORLD_road_distance %<>% mask(AOI) %>% crop(AOI)
 writeRaster(WORLD_road_distance, "./2_work/AOI_roads_raster_0_1.tif", overwrite = T)
 
+# Urban areas
 WORLD_urban_distance <- rast("./2_work/WORLD_urban_raster.tif")
 WORLD_urban_distance <- ifel(is.na(WORLD_urban_distance), 0, WORLD_urban_distance)
 writeRaster(WORLD_urban_distance, "./2_work/WORLD_urban_raster_0_1.tif", overwrite = T)
 WORLD_urban_distance %<>% mask(AOI) %>% crop(AOI)
 writeRaster(WORLD_urban_distance, "./2_work/AOI_urban_raster_0_1.tif", overwrite = T)
 
+# Water
 WORLD_water_distance <- rast("./2_work/WORLD_water_raster.tif")
 WORLD_water_distance <- ifel(is.na(WORLD_water_distance), 0, WORLD_water_distance)
 writeRaster(WORLD_water_distance, "./2_work/WORLD_water_raster_0_1.tif", overwrite = T)
@@ -814,7 +850,6 @@ writeRaster(WORLD_water_distance, "./2_work/AOI_water_raster_0_1.tif", overwrite
 ```
 
 #### Step III
-
 Calculade eucledian distance maps via whitebox.
 
 ```{r}
@@ -834,12 +869,11 @@ wbt_euclidean_distance(
 )
 ```
 
-#### Combine all + Crop to AOI + Resample for faster prelimnary model runs
+### Combine
+Combine all, crop to AOI and resample for faster preliminary model runs.
 
-The distane maps are not available in world size, therefore the distances to roads, waters and urban areas have to be extracted on an other way lateron.
+Note: The distane maps are not available in world size, therefore the distances to roads, waters and urban areas have to be extracted on an other way lateron.
 That means that the AOI_environment.tif is fully self contained in all environmental factors that are needed but the WORLD_environment.tif is not.
-
-TODO: umbenennen der variablen ohne dieses wc_2.1 krams
 
 ```{r}
 WORLD_environment <- terra::rast(
@@ -918,9 +952,8 @@ EU_environment_low <- rast("./3_ready/EU_environment_low.tif")
 ```
 
 
-### Future conditions
+### Future conditions {.tabset}
 #### Future climate
-
 Source: [World Climate Reseach Programme](https://doi.org/10.22033/ESGF/CMIP6.4332)
 
 Can be cropped directly because of no need of data outside of AOI for prediction.
@@ -940,7 +973,6 @@ writeRaster(future_climate, "./2_work/future data/EU_climate.tif", overwrite = T
 ```
 
 #### Future Urban
-
 Source: [Land-Use Harmonization²](https://luh.umd.edu/data.shtml) and [Extractions made available here](https://doi.org/10.17161/bi.v16i1.15483)
 
 For prediction only AOI is needed.
@@ -957,7 +989,6 @@ writeRaster(future_urban, "./2_work/future data/urban_low.tif", overwrite = T)
 ```
 
 #### Future Forest
-
 Source: [Land-Use Harmonization²](https://luh.umd.edu/data.shtml) and [Extractions made available here](https://doi.org/10.17161/bi.v16i1.15483)
 
 Here two forest raster files: primary and secondary forest.
@@ -975,43 +1006,7 @@ writeRaster(future_forest, "./2_work/future data/forest_low.tif", overwrite = T)
 ```
 
 #### Resampling
-
-Attention: In my case, teh whitebox had a bug in piping the resample function to the shell, therefore I performed these steps in the GUI (whitebox_runner).
-
-##### Bug in the resampling function fixed
-
-I dont know when it is fixed, therefore I included the fixed function:
-
-```{r}
-wbt_resample <- function(
-    inputs, output, cell_size = NULL, base = NULL, method = "cc",
-    wd = NULL, verbose_mode = FALSE, compress_rasters = FALSE,
-    command_only = FALSE) {
-    wbt_init()
-    args <- ""
-    args <- paste(args, paste0("--inputs=", whitebox:::wbt_file_path(inputs)))
-    args <- paste(args, paste0("--output=", whitebox:::wbt_file_path(output)))
-    if (!is.null(cell_size)) {
-        args <- paste(args, paste0("--cell_size=", cell_size))
-    }
-    if (!is.null(base)) {
-        args <- paste(args, paste0("--base=", whitebox:::wbt_file_path(base)))
-    }
-    if (!is.null(method)) {
-        args <- paste(args, paste0("--method=", method))
-    }
-    if (!missing(wd)) {
-        args <- paste(args, paste0("--wd=", whitebox:::wbt_file_path(wd)))
-    }
-    if (!missing(compress_rasters)) {
-        args <- paste(args, paste0("--compress_rasters=", compress_rasters))
-    }
-    tool_name <- "resample"
-    wbt_run_tool(tool_name, args, verbose_mode, command_only)
-}
-```
-
-##### Resampling
+Attention: In my case, the whitebox had a bug in piping the resample function to the shell therefore I corrected the function.
 
 ```{r}
 wbt_resample(
@@ -1057,7 +1052,6 @@ wbt_resample(
 ```
 
 #### New urban distance map
-
 ```{r}
 future_urban <- rast("./2_work/future data/urban_high.tif")
 future_urban <- ifel(is.na(future_urban) | future_urban < 0.1, 0, 1)
@@ -1072,7 +1066,6 @@ wbt_euclidean_distance(
 ```
 
 #### Combine
-
 ```{r}
 future_final <- rast(
     c(
@@ -1093,10 +1086,10 @@ future_final <- rast("./3_ready/FUTURE_EU_environment.tif")
 ```
 
 # Data extraction
-
 ```{r}
 dir.create("./3_ready/model input")
 ```
+
 ## Input environment {.tabset}
 ### World high resolution
 ```{r}
@@ -1136,45 +1129,6 @@ load("./3_ready/model input/PA_WORLD.Rdata")
 
 Now jump to the step "Collinearity", afterwards, when determine the least collinear variables, proceed here.
 
-TODO: AOI and WORLD low resolution not necessary
-
-### World low resolution
-
-```{r}
-all_data <- extraction_format(
-    start = WORLD_environment_low,
-    species = all_occs
-)
-
-all_data$train.df %<>%
-    add_column(
-        nearestdistance_to(
-            all_data$train.points,
-            list(
-                road_distance = roads,
-                urban_distance = urban,
-                water_distance = water
-            )
-        )
-    )
-
-all_data$test.df %<>%
-    add_column(
-        nearestdistance_to(
-            all_data$test.points,
-            list(
-                road_distance = roads,
-                urban_distance = urban,
-                water_distance = water
-            )
-        )
-    )
-
-save(all_data, file = "./3_ready/model input/PA_WORLD_low.Rdata")
-
-load("./3_ready/model input/PA_WORLD_low.Rdata")
-```
-
 ### AOI high resolution
 
 ```{r}
@@ -1186,18 +1140,6 @@ all_data <- extraction_format(
 save(all_data, file = "./3_ready/model input/PA_AOI.Rdata")
 
 load("./3_ready/model input/PA_AOI.Rdata")
-```
-
-### AOI low resolution
-```{r}
-all_data <- extraction_format(
-    start = AOI_environment_low,
-    species = all_occs
-)
-
-save(all_data, file = "./3_ready/model input/PA_AOI_low.Rdata")
-
-load("./3_ready/model input/PA_AOI_low.Rdata")
 ```
 
 ## Prediction environment
@@ -1213,30 +1155,28 @@ Export raster environment as table for faster repetitive prediction.
 
 ```{r}
 raster_prep_stan4bart(
-    rast("./3_ready/EU_environment.tif"),
-    c(most.important, randoms),
-    "./3_ready/model input/EU_environment_rast"
+    in_raster = rast("./3_ready/EU_environment.tif"),
+    in_vars = c(most.important, randoms),
+    save.path = "./3_ready/model input/EU_environment_rast"
 )
 
 raster_prep_stan4bart(
-    rast("./3_ready/EU_environment_low.tif"),
-    c(most.important, randoms),
-    "./3_ready/model input/EU_environment_low_rast"
+    in_raster = rast("./3_ready/EU_environment_low.tif"),
+    in_vars = c(most.important, randoms),
+    save.path = "./3_ready/model input/EU_environment_low_rast"
 )
 
 raster_prep_stan4bart(
-    rast("./3_ready/FUTURE_EU_environment.tif"),
-    c(most.important, randoms),
-    "./3_ready/model input/FUTURE_environment_rast"
+    in_raster = rast("./3_ready/FUTURE_EU_environment.tif"),
+    in_vars = c(most.important, randoms),
+    save.path = "./3_ready/model input/FUTURE_environment_rast"
 )
 ```
 
 # Spatial Cluster Analysis
-
-TODO: beschreiben
+Analysis of spatial muntiac occurrence pattern. Assumed is a strong spatial clustering.
 
 ```{r}
-
 load("./3_ready/model input/PA_AOI.Rdata")
 Presences <- all_data$train.df %>%
     filter(pa == 1) %>%
@@ -1259,7 +1199,6 @@ autocorr <- list()
 autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("GBR", "IRL"),]])
 Window(autocorr$muntgbif_GB_ppp) <- as.owin(AOI[AOI$Name %in% c("GBR", "IRL"),])
 unitname(autocorr$muntgbif_GB_ppp) <- "m/m"
-
 
 ## Taiwan
 autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("TWN"),]])
@@ -1294,11 +1233,51 @@ autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r/1000, y = obs)) +
 #Inter-event distribution for Taiwanese and Brittish muntjac occurrences
 grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55,3))
 
+
+
+#### Continent wide ####
+
+## Europe
+autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %!in% c("TWN", "CHN"),]])
+Window(autocorr$muntgbif_GB_ppp) <- as.owin(AOI[AOI$Name  %!in% c("TWN", "CHN"),])
+unitname(autocorr$muntgbif_GB_ppp) <- "m/m"
+
+## ASIA
+autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("TWN", "CHN"),]])
+Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN", "CHN"),])
+unitname(autocorr$muntgbif_TW_ppp) <- "m/m"
+
+# Test against 100 Monte Carlo Iterations of complete spatial randomness
+autocorr$GB_fest <-  envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
+autocorr$TW_fest <-  envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
+
+
+## Europe Plot
+autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r/1000, y = obs)) +
+  geom_line(aes(), col = "black", lwd = 1.5) +
+  geom_line(aes(y = theo), col = "red", lwd = 1.5) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "red", alpha = 0.5, show.legend = FALSE) +
+  scale_colour_manual(name = 'F(r) statistics', 
+    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
+  ylab("F(r)") + xlab("Radius (km)")+
+  ggtitle("A)")
+
+## Asia Plot
+autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r/1000, y = obs)) +
+  geom_line(aes(col = "black"), lwd = 1.5) +
+  geom_line(aes(y = theo, col = "red"), lwd = 1.5, show.legend = F) +
+  geom_ribbon(aes(ymin = lo, ymax = hi, fill = "red"), alpha = 0.5, show.legend = FALSE) +
+  scale_colour_manual(name = 'F(r) statistics', 
+    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
+  ylab("F(r)") + xlab("Radius (km)") +
+  ggtitle("B)")
+
+
+#Inter-event distribution for European and Asian muntjac occurrences
+grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55,3))
 ```
 
 # Collinearity
-## Test
-
 ```{r}
 load("./3_ready/model input/PA_WORLD.Rdata")
 
@@ -1319,8 +1298,6 @@ col_result <- col_test_df %>%
 owncount(col_result, "VIF", 10, "max")
 ```
 
-TODO: - Results can be found in the publication in table ...
-
 Remaining variables: 
 - Annual Precipitation (bio_12)
 - Slope (slope)
@@ -1333,9 +1310,7 @@ For expected sampling bias the following were included as random factors:
 - Urban distance (urban_distance)
 
 # Model
-
-## Output Directories
-
+Create the necessary directories.
 ```{r}
 dir.create("./4_output/1.EU_high_res_CV_PRED_low_res/")
 dir.create("./4_output/2.EU_high_res_CV_PRED_high_res/")
@@ -1345,14 +1320,14 @@ dir.create("./4_output/5. EU_hig_res_CV_PRED_future/")
 dir.create("./4_output/6. WORLD_hig_res_CV_PRED_future/")
 ```
 
-## Model + Predictions
-
+Cross valiation loop, parameterization and predictions
 ```{r}
 # Settings for the test runs:
 cv.runs <- 5
-iter_own <- 30
-warmup_own <- 10
+iter_own <- 50
+warmup_own <- 20
 chains_own <- 2
+trees_own <- 50
 
 
 # Settings for the final run:
@@ -1360,9 +1335,11 @@ chains_own <- 2
 # iter_own <- 500
 # warmup_own <- 200
 # chains_own <- 3
+# trees_own <- 200
 
 ### In the following:
 ## Comment or uncomment the necessary parts for predicting AOI or WORLD data sets to high/low resolution EU or the FUTURE data set.
+## The low resolution rasters were taken for finding the right parameterization (chains, iterations, trees, ...)
 
 # ################ 1
 # Predict from AOI to low EU
@@ -1414,8 +1391,6 @@ data_map_df_comp <- read.table("./3_ready/model input/EU_environment_low_rast_co
 # data_map_df_comp <- read.table("./3_ready/model input/FUTURE_environment_rast_comp_cases.txt")
 
 
-
-
 # Do not change!
 prediction.count.cv <- 0 # Has to be 0
 
@@ -1459,7 +1434,8 @@ all.points <- all_data$train.points %>%
 #################### Automatic CV loop
 
 for (i in 1:cv.runs) {
-    # Random sampling
+
+    # Random assembling of the data
     sample.pres <- sample(
         c(TRUE, FALSE),
         nrow(Presences.cv),
@@ -1496,7 +1472,7 @@ for (i in 1:cv.runs) {
         warmup = warmup_own, # No. of "iter" to draw and reject for warmup
         bart_args = list(
             weights = my_weights.cv, # Weights to use
-            n.trees = 50, # No. of trees to form
+            n.trees = trees_own, # No. of trees to form
             keepTrees = T, # Save trees for prediction
             combineChains = F, # Combine seperate chains to one
             n.chains = 1 # Nr. of MCMC-Chains within the bart component
@@ -1536,7 +1512,6 @@ for (i in 1:cv.runs) {
 
     # Create a ROCR-object from the prediction + calculate several indices
     evaluation.cv[[i]] <- ROCR::prediction(testpred, PA_test.cv$pa)
-
     auc.cv[[i]] <- ROCR::performance(evaluation.cv[[i]], measure = "auc")@y.values %>%
         unlist() # area under the curve
     tss[[i]] <- max(
@@ -1579,7 +1554,7 @@ for (i in 1:cv.runs) {
         print(paste("Model", i, "saved!"))
 
 
-        # remove prediction from RAM
+        # remove prediction from workspace
         rm(model.stan.predict.cv)
     } else {
         print(paste("Model", i, "rejected!"))
@@ -1617,6 +1592,7 @@ print("############### DONE! ###############")
 
 # Exploring the data
 ## Load right data for further proceeding
+Here you can run the necessary columns to load the data of a specific cv run.
 
 ```{r}
 # ################ 1
@@ -1657,7 +1633,6 @@ model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pa
 ```
 
 ## Variable importance
-
 ```{r}
 tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
     apply(1:2, mean) %>%
@@ -1686,7 +1661,6 @@ ggplot(my_dataframe %>% filter(variable == "mean"), aes(x = L2, y = value, group
 ```
 
 ## Test statistics
-
 ```{r}
 evaluation.cv # Can be used in the ROCR internal statistic functions
 
@@ -1701,16 +1675,13 @@ bri
 ```
 
 ## Result map stacks
-
 ### Directory
 ```{r}
 dir.create("./4_output/Result")
 ```
 
-### Today
-
+### Today {.tabset}
 #### Mean over all CV-Runs and base datasets
-
 ```{r}
 Curr_EU_mean <- rast("./4_output/2.EU_high_res_CV_PRED_high_res/Run_mean.tif")
 
@@ -1743,7 +1714,6 @@ levels(final_map) <- cls
 ```
 
 #### Standard deviation
-
 ```{r}
 Curr_ALL_std <- rast(c(
     "./4_output/2.EU_high_res_CV_PRED_high_res/Run_std.tif",
@@ -1752,7 +1722,6 @@ Curr_ALL_std <- rast(c(
 ```
 
 #### Final stack
-
 ```{r}
 final_res <- c(Curr_EU_mean, Curr_WORLD_mean, final_map, Curr_ALL_std)
 
@@ -1761,10 +1730,8 @@ names(final_res) <- c("EU_mean", "EU_thresh", "WORLD_mean", "WORLD_thresh", "fin
 terra::writeRaster(final_res, "./4_output/Result/TODAY_Final_map.tif", overwrite = T)
 ```
 
-### Future
-
+### Future {.tabset}
 #### Mean over all CV-Runs and base datasets
-
 ```{r}
 Fut_EU_mean <- rast("./4_output/5. EU_hig_res_CV_PRED_future/Run_mean.tif")
 
@@ -1796,7 +1763,6 @@ levels(final_map) <- cls
 ```
 
 #### Standard deviation
-
 ```{r}
 Fut_ALL_std <- rast(c(
     "./4_output/5. EU_hig_res_CV_PRED_future/Run_std.tif",
@@ -1805,7 +1771,6 @@ Fut_ALL_std <- rast(c(
 ```
 
 #### Final stack
-
 ```{r}
 final_res <- c(Fut_EU_mean, Fut_WORLD_mean, final_map, Fut_ALL_std)
 
@@ -1814,7 +1779,6 @@ terra::writeRaster(final_res, "./4_output/Result/FUTURE_Final_map.tif", overwrit
 ```
 
 ### Germany Maps
-
 ```{r}
 rast("./4_output/Result/TODAY_Final_map.tif") %>%
     crop(AOI[AOI$Name == "DEU", ]) %>%
@@ -1826,7 +1790,6 @@ rast("./4_output/Result/FUTURE_Final_map.tif") %>%
 ```
 
 ### Plots
-
 ```{r}
 AOI <- st_read("./3_ready/AOI_border.shp")
 
@@ -1844,7 +1807,7 @@ DE_districts <- st_read("./1_input/German_States/vg2500_12-31.tm32.shape/vg2500/
     st_transform(st_crs(AOI))
 ```
 
-FIXME: DE_Districts zum laufen bringen
+EU-wide and Germany-wide plots of the suitability, for today, future prediction and the standard deviations between all model runs
 
 ```{r}
 # Europe
@@ -1917,10 +1880,9 @@ tmap_arrange(
 ```
 
 
-# Predators
+# Predators {.tabset}
 
 ## Wolf
-
 First, georeference the map from the paper: [Kramer-Schadt et al., 2020](https://doi.org/10.19217/skr556)
 
 ```{r}
@@ -2040,8 +2002,7 @@ tmap_arrange(
 )
 ```
 
-# Area calculations
-
+# Area calculations {.tabset}
 ## Europe
 ```{r}
 ## Today
@@ -2148,7 +2109,8 @@ Wolf_area <- terra::zonal(truesize, wolf_overlap, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 ```
 
-# Multivariate environmental simillarity surface (MESS)
+# MESS
+Multivariate environmental simillarity surface 
 
 ## Load the data
 ```{r}
@@ -2171,6 +2133,7 @@ all.points <- all_data$train.points %>%
 AOI <- st_read("./3_ready/AOI_border.shp")
 ```
 
+## Plot
 ```{r}
 EU_environment <- rast("./3_ready/EU_environment.tif")
 
@@ -2225,7 +2188,8 @@ tm_shape(mess_raster_high_new, bbox = my_bbox) + tm_raster(palette = my_col, leg
 ```
 
 
-# Vaiable range plots between Europe and Asia
+# Vaiable range
+Plots between Europe and Asia
 
 ```{r}
 most.important <- c("bio_1", "bio_12", "trees", "water_distance", "slope")
