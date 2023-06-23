@@ -1321,10 +1321,35 @@ dir.create("./4_output/6. WORLD_hig_res_CV_PRED_future/")
 ```
 
 Cross valiation loop, parameterization and predictions
+
+Input:
+
+- __all_data__ = saved in PA_*.Rdata --> The muntjac occurrences + environment.
+- __path_to_store__ = Path to the output directory --> Output raster + Test values.
+- __prediction_to_what__ = Template raster for transforming the prediction data frame to a raster.
+- __data_map_df__ = Pre-built data frame of the prediction environment.
+- __data_map_df_comp__ = Vector with nrow(__data_map_df_comp__) = nrow(__data_map_df__) where __data_map_df__ matches complete_cases().
+
+Output:
+
+- __test_stat.RData__ = RData document that includes the calculated test statistics. All objects are lists of lenght == cv.runs.
+    - evaluation.cv = ROCR-Object for evaluation of the model i.
+    - auc.cv = Area under the curve value per model $\in$ [0,1], the higher the better.
+    - tss.thresh = Threshold where TSS $\in$ [0,1] is highest, the higher the better.
+    - tss = True skill statistics test value $\in$ [0,1], the higher the better.
+    - acceptance = Is the model accepted $\in$ {TRUE, FALSE}.
+    - accurr = Accurracy of the model $\in$ [0,1], the higher the better.
+    - convergence = Internal convergence check $\in$ {0,1}, has to be 1 .
+    - tree_vars_imp = Variable importance, mean and standard deviation per used environmental variable per CV-run. List of arrays with list lenght == cv.runs and array dimensions $\in$ {lenght(most.important), 2, cv.runs}.
+    - bri = Brier Score $\in$ [0,1], the lower the better.
+- __Run_[1,cv.runs].tif__ = GEOTiffs of one raster per CV-Run with the spatial probability of presence prediction.
+
+
+
 ```{r}
 # Settings for the test runs:
 cv.runs <- 5
-iter_own <- 50
+iter_own <- 40
 warmup_own <- 20
 chains_own <- 2
 trees_own <- 50
@@ -1333,7 +1358,7 @@ trees_own <- 50
 # Settings for the final run:
 # cv.runs <- 25
 # iter_own <- 500
-# warmup_own <- 200
+# warmup_own <- 150
 # chains_own <- 3
 # trees_own <- 200
 
@@ -1481,6 +1506,9 @@ for (i in 1:cv.runs) {
 
     print(paste("Model", i, "created!"))
 
+    # Definition of how many iterations and chains should be combined for prediction (needs to be activated in the prediction for testing and further down for the raster)
+    # coltake <- seq(iter_own - warmup_own, (iter_own - warmup_own) * chains_own, iter_own - warmup_own)
+
     # Variable importance
     tree_vars_imp[[i]] <- apply(model.stan.cv[[i]]$bart_varcount, 3, FUN = rowMeans) %>%
         rowMeans() %>%
@@ -1491,8 +1519,9 @@ for (i in 1:cv.runs) {
         setNames(c("mean", "sd")) %>%
         divide_by(sum(.$mean))
 
-    # inclusion of coltake
-    # tree_vars_imp[[i]] <- model.stan.cv[[i]]$bart_varcount %>% .[,coltake[1],] %>%
+    # Inclusion of coltake
+    # tree_vars_imp[[i]] <- model.stan.cv[[i]]$bart_varcount %>% 
+    #     .[,coltake[1],] %>%
     #     rowMeans() %>%
     #     as.data.frame() %>%
     #     cbind((apply(model.stan.cv[[i]]$bart_varcount %>% .[,coltake[1],], 1, FUN = sd) %>%
@@ -1500,10 +1529,6 @@ for (i in 1:cv.runs) {
     #     setNames(c("mean", "sd")) %>%
     #     divide_by(sum(.$mean))
 
-
-
-    # Definition of how many iterations and chains should be combined for prediction (needs to be activated in the prediction for testing and further down for the raster)
-    # coltake <- seq(iter_own - warmup_own, (iter_own - warmup_own) * chains_own, iter_own - warmup_own)
 
     # Prediction of the model
     testpred <- predict(model.stan.cv[[i]], newdata = PA_test.cv) %>%
