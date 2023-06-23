@@ -59,23 +59,25 @@ set.seed(2121997)
 ## Self defined functions {.tabset}
 
 ### Negate
+Negated version of the "Value Matching"-Function.
+
 ```{r}
 `%!in%` <- Negate(`%in%`)
 ```
 
 ### Get n Minimal/Maximal result
-List the first n results of a dataframe sorted by a column. Interesting for seeing the most collinear values late on.
+List the first n results of a data frame sorted by a column. Interesting for seeing the most collinear values late on.
 
 Input:
 
-- __a__ = data frame/tibble that sould be displayed
-- __b__ = column to sort the results
-- __c__ = number of rows that sould be displayed
+- __a__ = Data frame/tibble that should be displayed.
+- __b__ = Column to sort the results.
+- __c__ = Number of rows that should be displayed.
 - __mode__ = c("max", "min") means either sort decreasing or increasing.
 
 Output:
 
-- __result__ = ordered tibble with nrow() = c
+- __result__ = Ordered tibble with nrow() = c.
 
 ```{r}
 owncount <- function(a, b, c = ncol(a), mode = c("max", "min")) {
@@ -89,27 +91,27 @@ owncount <- function(a, b, c = ncol(a), mode = c("max", "min")) {
 ```
 
 ### Data Preparation
-It automatically appends the data set with randomly sampled absence points based on the extent of the SpatRaster and creates data frames that can be used in the modelling process
+It automatically appends the data set with randomly sampled absence points based on the extent of the SpatRaster and creates data frames that can be used in the modelling process.
 The data have to be in the same coordinate reference system.
 
-Attention: Here is implemented directly the rule of thumb after Huberty 1994 for splitting into train and test data.
+Attention: Here is implemented directly the rule of thumb after Huberty (1994) reviewed in [Fielding, A. H., & Bell, J. F. (1997)](https://doi.org/10.1017/S0376892997000088) for splitting into train and test data.
 
 Inputs:
 
-- __start__ = environment as a SpatRaster with different layers as predictors
-- __species__ = sf object of occurrence points
-- __most.important__ = vector of variables threatened as important ones that should be extracted from the SpatRaster
-- __randoms__ = same as most.important but for the random variables
+- __start__ = Environment as a SpatRaster with different layers as predictors.
+- __species__ = Sf object of occurrence points.
+- __most.important__ = Vector of variables threatened as important ones that should be extracted from the SpatRaster.
+- __randoms__ = Same as most.important but for the random variables.
 
 Output:
 
 List of:
 
-- __train.points__ = sf object of model training points
-- __test.points__ = sf object of model test points
-- __train.df__ = data frame of variables at train points + pa = column for presence absence
-- __test.df__ = data frame of variables at test points + pa = column for presence absence
-- __removedNA__ = removed points due to NA in an environmental layer
+- __train.points__ = Sf object of model training points.
+- __test.points__ = Sf object of model test points.
+- __train.df__ = Data frame of variables at train points + pa = column for presence absence.
+- __test.df__ = Data frame of variables at test points + pa = column for presence absence.
+- __removedNA__ = Removed points due to NA in an environmental layer.
 
 ```{r}
 fuzzySim::percentTestData(5) # in our case at the end 5 main variables
@@ -200,7 +202,7 @@ extraction_format <- function(start, species, most.important = NULL, randoms = N
 
 ### wbt_resample bugfix
 
-I dont know when it is fixed, therefore I included the fixed function here.
+I do not know when it is fixed, therefore I included the fixed function here.
 For documentation see: [WhiteboxTools](https://cran.r-project.org/web/packages/whitebox/whitebox.pdf).
 
 ```{r}
@@ -238,19 +240,19 @@ Adapted "multicol" function from the "fuzzySim"-Package to display more informat
 
 Input:
 
-- __vars__ = data frame of environmental conditions
-- __model__ = not needed in this context
-- __reorder__ = order result at the end?
+- __vars__ = Data frame of environmental conditions.
+- __model__ = Not needed in this context.
+- __reorder__ = Order result at the end?
 
 Output:
 
-- result = tibble with several columns, nrow(result) = ncol(vars)
-    - __Rsquared__ = R² of the built model
+- result = tibble with several columns, nrow(result) = ncol(vars).
+    - __Rsquared__ = R² of the built model.
     - __Tolerance__ = 1 - R²
-    - __VIF__ = Variance Inflation Factor 1 / (1 - R²)
-    - __count__ = Number of collinear variables
-    - __significant_vars__ = Significant collinear variables
-    - __insignificant_vars__ = Not collinear variables
+    - __VIF__ = Variance Inflation Factor 1 / (1 - R²).
+    - __count__ = Number of collinear variables.
+    - __significant_vars__ = Significant collinear variables.
+    - __insignificant_vars__ = Not collinear variables.
 
 ```{r}
 multicol_own <- function(vars = NULL, model = NULL, reorder = TRUE) {
@@ -302,12 +304,12 @@ This can be used if there is no raster available, for example if you want to use
 
 Input:
 
-- __a__ = sf object, here presence/absence points
-- __b__ = sf object, here polygons of cities, lines of streets, ... it can also be a named list if more than one variable sould be added
+- __a__ = Sf object, here presence/absence points.
+- __b__ = Sf object, here polygons of cities, lines of streets, .... It can also be a named list if more than one variable should be added.
 
 Output:
 
-- __distance__ = Distance of every point in _a_ to the nearest polygon in _b_
+- __distance__ = Distance of every point in _a_ to the nearest polygon in _b_.
 
 ```{r}
 nearestdistance_to <- function(a, b) {
@@ -327,8 +329,8 @@ nearestdistance_to <- function(a, b) {
 
 ### Weights 
 Creation of weights according to the number of features in a radius, means 0.5/n where n = number of points in a radius. 
-That means, if n = 1 than the occurrence has one neighbor, therefore 0.5/1 = 0.5 and bot occurrences are weighted 0.5.
-Default: the radius of a circle that results in the average territorial size of the muntjac according to ...
+That means, if n = 1 than the occurrence has one neighbour, therefore 0.5/1 = 0.5 and bot occurrences are weighted 0.5.
+Default: The radius of a circle that results in the average territorial size of the muntjac according to [Chapman et. al (1993)](https://doi.org/10.1111/j.1469-7998.1993.tb02660.x).
 
 Input:
 
@@ -337,7 +339,7 @@ Input:
 
 Output:
 
-- vector of length(sf_geom) with values [1,0[.
+- Vector of length(sf_geom) with values $\in$ [1,0[.
 
 ```{r}
 nbfunction <- function(sf_geom, buffer_radius = 298.5411) {
@@ -387,13 +389,13 @@ If you often use the same raster stack for prediction, use the other function wh
 
 Input:
 
-- __model__ = stan4bart object with "keepTrees = T"
-- __raster__ = SpatRaster with new environment (for prediction) or old environment (for inter/extrapolation)
-- __type__ = one of types of predict.stan4bartFit
+- __model__ = stan4bart object with "keepTrees = T".
+- __raster__ = SpatRaster with new environment (for prediction) or old environment (for inter/extrapolation).
+- __type__ = One of types of predict.stan4bartFit.
 
 Output:
 
-- __new_raster__ = Predicted raster
+- __new_raster__ = Predicted raster.
 
 ```{r}
 raster_pred_stan4bart <- function(model, raster, type = "ev") {
@@ -440,15 +442,15 @@ Function that converts a raster into a table for efficient reuse in prediction f
 
 Input:
 
-- __in_raster__ = Raster stack to be converted
-- __in_vars__ = Names of the layers that should be converted
+- __in_raster__ = Raster stack to be converted.
+- __in_vars__ = Names of the layers that should be converted.
 - __save.path__ = Path where to store + Base name of the documents. Attention: File ending and identifier are added automatically.
 
 
 Output = Two output files:
 
 - __*_na-free.txt__ = Raster as table, every column that does not match "complete.cases()" removed.
-- __*_comp_cases.txt__ = Vector of line numbers that match "complete.cases()"
+- __*_comp_cases.txt__ = Vector of line numbers that match "complete.cases()".
 
 ```{r}
 raster_prep_stan4bart <- function(in_raster, in_vars, save.path = tempdir()) {
@@ -475,11 +477,11 @@ Prediction of a stan4bart-object to new data that has been prepaired with the "r
 Input:
 
 - __model__ = stan4bart-object
-- __newdata__ = object created with read.table("*_na-free.txt")
-- __complete_cases__ = object created with read.table("*_comp_cases.txt")
-- __base_raster__ = raster with the same properties as the raster fron which the newdata object was created --> the function needs to know on which basis the resulting raster has to be built.
-- __type__ = one of types of predict.stan4bartFit
-- __coltake__ = object created in the for-loop lateron, is only needed if you want only a part of the iterations/chains in your result. It simply is a vector including values [1, iterations*chains] for every iteration (of chains) that should be used.
+- __newdata__ = Object created with read.table("*_na-free.txt").
+- __complete_cases__ = Object created with read.table("*_comp_cases.txt").
+- __base_raster__ = Raster with the same properties as the raster fron which the newdata object was created. --> The function needs to know on which basis the resulting raster has to be built.
+- __type__ = One of types of predict.stan4bartFit.
+- __coltake__ = Object created in the for-loop lateron, is only needed if you want only a part of the iterations/chains in your result. It simply is a vector of values $\in$ [1, iterations*chains] for every iteration (of chains) that should be used.
 
 As the predicted chains and iterations are combined to one big matrix (colbind, one column per iteration) it aplies for creating __coltake__:
 
@@ -535,11 +537,11 @@ Here the function tries to find the threshold for a 1/0 classification of a map,
 Input:
 
 - __eval_list__ = ROCR-Object
-- __thresh__ = confidence/accurracy threshold
+- __thresh__ = Confidence/Accurracy threshold.
 
 Output:
 
-- 1/0 classification threshold of [1,0]
+- 1/0 classification threshold $\in$ [1,0]
 
 
 ```{r}
@@ -565,7 +567,7 @@ dir.create("./4_output")
 
 ## Variables 
 ### Boundaries World and Area of interest {.tabset}
-Choosen Coutries as area of interest (AOI)
+Choosen Coutries as area of interest (AOI).
 ```{r}
 countryCodes <- tibble(isoA3 = vector(length = 40))
 countryCodes$isoA3 <- c("AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR", "TWN", "CHE", "NOR", "BLR", "UKR", "SRB", "MKD", "MNE", "BIH", "HRV", "MDA", "CHN")
@@ -588,7 +590,7 @@ world_border <- st_read(("./3_ready/WORLD_border.shp"))
 ```
 
 #### AOI border
-Crop to AOI border
+Crop the world shape to AOI border.
 ```{r}
 AOI <- world_border
 
@@ -603,7 +605,7 @@ AOI <- st_read("./3_ready/AOI_border.shp")
 ### Response (Muntiacus reevesi occurrences) {.tabset}
 #### GBIF
 Source: [GBIF](https://www.gbif.org/occurrence/download/0065916-230224095556074)
-
+ 
 ```{r}
 muntgbif <- read_delim("./1_input/occurrence.txt", delim = "\t")
 
@@ -690,8 +692,9 @@ st_write(all_occs, "./2_work/all_occs.shp")
 Sources: [water bodies](https://hub.arcgis.com/content/esri::world-water-bodies/about) and [linear waters](https://www.arcgis.com/home/item.html?id=273980c20bc74f94ac96c7892ec15aff)
 
 Preprocessing via QGIS:
+
 - Combine both files
-- Export as shape with CRS = EPSG4087
+- Export as shape file with CRS = EPSG4087
 
 ```{r}
 water <- st_read("./2_work/world_water.shp")
@@ -821,7 +824,7 @@ landCover <- rast("./2_work/landcover_merge.tif")
 
 ### Distance maps to Urban areas, Water and streets {.tabset}
 #### Step I
-The fist step was the rasterization of the urban areas, waters and streets in QGIS. R works too ineficient on large rasters. You can also try the ´fasterize´ function but its not working with MULTILINESTRING at the moment.
+The fist step was the rasterization of the urban areas, waters and streets in QGIS. Export them as "WORLD_roads_raster.tif", "WORLD_urban_raster.tif" and "WORLD_water_raster.tif" with CRS = EPSG4087. R works too ineficient on large rasters. You can also try the ´fasterize´ function but its not working with MULTILINESTRING at the moment or use the "RQGIS"-Package.
 
 #### Step II
 NAs have to be set to 0 for further processing in whitebox. Additionally the rasters were croped to the AOI.
@@ -872,7 +875,7 @@ wbt_euclidean_distance(
 ### Combine
 Combine all, crop to AOI and resample for faster preliminary model runs.
 
-Note: The distane maps are not available in world size, therefore the distances to roads, waters and urban areas have to be extracted on an other way lateron.
+Note: The distane maps are not available in world size, therefore the distances to roads, waters and urban areas have to be extracted on an other way later on.
 That means that the AOI_environment.tif is fully self contained in all environmental factors that are needed but the WORLD_environment.tif is not.
 
 ```{r}
@@ -956,7 +959,7 @@ EU_environment_low <- rast("./3_ready/EU_environment_low.tif")
 #### Future climate
 Source: [World Climate Reseach Programme](https://doi.org/10.22033/ESGF/CMIP6.4332)
 
-Can be cropped directly because of no need of data outside of AOI for prediction.
+Can be cropped directly to Europe because of no need of data outside of AOI for prediction.
 
 ```{r}
 future_climate <- rast("./1_input/future data/wc2.1_2.5m_bioc_ACCESS-CM2_ssp585_2061-2080.tif")[[c(1, 12)]]
@@ -975,8 +978,7 @@ writeRaster(future_climate, "./2_work/future data/EU_climate.tif", overwrite = T
 #### Future Urban
 Source: [Land-Use Harmonization²](https://luh.umd.edu/data.shtml) and [Extractions made available here](https://doi.org/10.17161/bi.v16i1.15483)
 
-For prediction only AOI is needed.
-
+For prediction only Europe is needed.
 ```{r}
 future_urban <- rast("./1_input/future data/CMIP6_Land_Use_Harmonization_urban_SSP5_85_2071.tif")
 
@@ -991,7 +993,7 @@ writeRaster(future_urban, "./2_work/future data/urban_low.tif", overwrite = T)
 #### Future Forest
 Source: [Land-Use Harmonization²](https://luh.umd.edu/data.shtml) and [Extractions made available here](https://doi.org/10.17161/bi.v16i1.15483)
 
-Here two forest raster files: primary and secondary forest.
+Here two forest raster files are combined: primary and secondary forest.
 
 ```{r}
 future_forest <- rast(c("./1_input/future data/CMIP6_Land_Use_Harmonization_primf_SSP5_85_2071.tif", "./1_input/future data/CMIP6_Land_Use_Harmonization_secdf_SSP5_85_2071.tif"))
@@ -1006,7 +1008,7 @@ writeRaster(future_forest, "./2_work/future data/forest_low.tif", overwrite = T)
 ```
 
 #### Resampling
-Attention: In my case, the whitebox had a bug in piping the resample function to the shell therefore I corrected the function.
+Attention: In my case, the whitebox had a bug in piping the resample function to the shell. Therefore I corrected the function.
 
 ```{r}
 wbt_resample(
@@ -1127,8 +1129,6 @@ save(all_data, file = "./3_ready/model input/PA_WORLD.Rdata")
 load("./3_ready/model input/PA_WORLD.Rdata")
 ```
 
-Now jump to the step "Collinearity", afterwards, when determine the least collinear variables, proceed here.
-
 ### AOI high resolution
 
 ```{r}
@@ -1141,6 +1141,8 @@ save(all_data, file = "./3_ready/model input/PA_AOI.Rdata")
 
 load("./3_ready/model input/PA_AOI.Rdata")
 ```
+
+Now jump to the step "Collinearity", afterwards, when determine the least collinear variables, proceed here.
 
 ## Prediction environment
 
@@ -1205,7 +1207,7 @@ autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("
 Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN"),])
 unitname(autocorr$muntgbif_TW_ppp) <- "m/m"
 
-# Test against 100 Monte Carlo Iterations of complete spatial randomness
+# Test against 100 Monte Carlo iterations of complete spatial randomness
 autocorr$GB_fest <-  envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
 autocorr$TW_fest <-  envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
 
@@ -1236,6 +1238,7 @@ grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(
 
 
 #### Continent wide ####
+# Not really needed, just for the sake of completeness
 
 ## Europe
 autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %!in% c("TWN", "CHN"),]])
@@ -1320,11 +1323,11 @@ dir.create("./4_output/5. EU_hig_res_CV_PRED_future/")
 dir.create("./4_output/6. WORLD_hig_res_CV_PRED_future/")
 ```
 
-Cross valiation loop, parameterization and predictions
+Cross valiation loop, parameterization and predictions.
 
 Input:
 
-- __all_data__ = saved in PA_*.Rdata --> The muntjac occurrences + environment.
+- __all_data__ = Saved in PA_*.Rdata --> The muntjac occurrences + environment.
 - __path_to_store__ = Path to the output directory --> Output raster + Test values.
 - __prediction_to_what__ = Template raster for transforming the prediction data frame to a raster.
 - __data_map_df__ = Pre-built data frame of the prediction environment.
@@ -1456,7 +1459,7 @@ all.points <- all_data$train.points %>%
     add_row(all_data$test.points %>% filter(pa == 0))
 
 
-#################### Automatic CV loop
+#################### Automatic CV loop #######################
 
 for (i in 1:cv.runs) {
 
@@ -1537,20 +1540,27 @@ for (i in 1:cv.runs) {
 
     # Create a ROCR-object from the prediction + calculate several indices
     evaluation.cv[[i]] <- ROCR::prediction(testpred, PA_test.cv$pa)
+    
     auc.cv[[i]] <- ROCR::performance(evaluation.cv[[i]], measure = "auc")@y.values %>%
         unlist() # area under the curve
+    
     tss[[i]] <- max(
         ROCR::performance(evaluation.cv[[i]], measure = "tpr")@y.values %>%
             unlist() +
             ROCR::performance(evaluation.cv[[i]], measure = "tnr")@y.values %>%
             unlist() - 1
     ) # true skill statistics
+    
     bri[[i]] <- get_and_calc_bri(evaluation.cv[[i]]) # brier score
+    
     tss.thresh[[i]] <- ROCR::performance(evaluation.cv[[i]], measure = "acc")@x.values[[1]][which(ROCR::performance(evaluation.cv[[i]], measure = "acc")@y.values[[1]] == max(ROCR::performance(evaluation.cv[[i]], measure = "acc")@y.values[[1]]))] %>%
         unlist() %>%
         min() # "best" threshold at maximum accurracy
+    
     accurr[[i]] <- max(ROCR::performance(evaluation.cv[[i]], measure = "acc")@y.values[[1]]) # accurracy
+    
     acceptance[[i]] <- ifelse(accurr[[i]] > 0.9 & auc.cv[[i]] > 0.9 & bri[[i]] < 0.05, TRUE, FALSE) # can the model be accepted?
+    
     convergence[[i]] <- model.stan.cv[[i]]$stan[6, , ] # internal convergence test
 
     # prediction if model is accepted
@@ -1567,7 +1577,6 @@ for (i in 1:cv.runs) {
             type = "ev",
             coltake = NULL # exchange NULL to coltake if you want to use the coltake columns
         )
-
 
         names(model.stan.predict.cv) <- paste("Run", i)
 
@@ -1617,7 +1626,7 @@ print("############### DONE! ###############")
 
 # Exploring the data
 ## Load right data for further proceeding
-Here you can run the necessary columns to load the data of a specific cv run.
+Here you can run the necessary columns to load the data of a specific CV-run.
 
 ```{r}
 # ################ 1
@@ -1664,7 +1673,7 @@ tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1
     as_tibble() %>%
     reframe(mean = V1, sd = V2)
 
-# Mean Importance over all chains and iterations
+# Mean Importance in percent over all chains and iterations
 ggplot(tree_vars_imp_mean * 100, aes(y = rownames(tree_vars_imp[[1]]), x = mean)) +
     geom_point() +
     geom_pointrange(aes(xmin = mean - sd, xmax = mean + sd)) +
@@ -1675,10 +1684,10 @@ ggplot(tree_vars_imp_mean * 100, aes(y = rownames(tree_vars_imp[[1]]), x = mean)
 # Convert matrix to data frame for use in ggplot2
 my_dataframe <- reshape2::melt(tree_vars_imp, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp[[1]]), max(L2) * 2))
 
-# Create the plot with facets
+# Advanced plot
 # X-Axis = Iterations
 # Y-Axis = Variable importance
-# Boxplot = Importance of that variable over the iterations
+# Boxplot = Importance of that variable over the CV-runs
 # Line = Exact variable importance per iteration
 ggplot(my_dataframe %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
     geom_line(aes(col = name)) +
@@ -1708,6 +1717,7 @@ dir.create("./4_output/Result")
 ### Today {.tabset}
 #### Mean over all CV-Runs and base datasets
 ```{r}
+###### Europe
 Curr_EU_mean <- rast("./4_output/2.EU_high_res_CV_PRED_high_res/Run_mean.tif")
 
 path_to_store <- "./4_output/2.EU_high_res_CV_PRED_high_res/"
@@ -1717,9 +1727,8 @@ thresh1 <- thresh_01(evaluation.cv)
 
 Curr_EU_mean[["thresh"]] <- ifel(Curr_EU_mean > thresh1, 1, 0)
 
+
 ####### World
-
-
 Curr_WORLD_mean <- rast("./4_output/4.WORLD_high_res_CV_PRED_high_res/Run_mean.tif")
 
 path_to_store <- "./4_output/4.WORLD_high_res_CV_PRED_high_res/"
@@ -1729,6 +1738,8 @@ thresh1 <- thresh_01(evaluation.cv)
 
 Curr_WORLD_mean[["thresh"]] <- ifel(Curr_WORLD_mean > thresh1, 1, 0)
 
+
+####### Final Map
 final_map <- c(Curr_WORLD_mean[["thresh"]], Curr_EU_mean[["thresh"]]) %>% mean()
 
 final_map <- ifel(final_map == 1, 2, final_map)
@@ -1758,6 +1769,7 @@ terra::writeRaster(final_res, "./4_output/Result/TODAY_Final_map.tif", overwrite
 ### Future {.tabset}
 #### Mean over all CV-Runs and base datasets
 ```{r}
+###### Europe
 Fut_EU_mean <- rast("./4_output/5. EU_hig_res_CV_PRED_future/Run_mean.tif")
 
 path_to_store <- "./4_output/5. EU_hig_res_CV_PRED_future/"
@@ -1767,8 +1779,8 @@ thresh1 <- thresh_01(evaluation.cv)
 
 Fut_EU_mean[["thresh"]] <- ifel(Fut_EU_mean > thresh1, 1, 0)
 
-####### World
 
+####### World
 Fut_WORLD_mean <- rast("./4_output/6. WORLD_hig_res_CV_PRED_future/Run_mean.tif")
 
 path_to_store <- "./4_output/6. WORLD_hig_res_CV_PRED_future/"
@@ -1778,6 +1790,8 @@ thresh1 <- thresh_01(evaluation.cv)
 
 Fut_WORLD_mean[["thresh"]] <- ifel(Fut_WORLD_mean > thresh1, 1, 0)
 
+
+####### Final Map
 final_map <- c(Fut_WORLD_mean[["thresh"]], Fut_EU_mean[["thresh"]]) %>% mean()
 
 final_map <- ifel(final_map == 1, 2, final_map)
@@ -1836,21 +1850,14 @@ EU-wide and Germany-wide plots of the suitability, for today, future prediction 
 
 ```{r}
 # Europe
-# my_col <- c("#F2F2F2", "#eea255", "#3daa62")
-# my_col <- c("#a6cee3", "#1f78b4", "#b2df8a")
-# my_col <- c("#8da0cb", "#66c2a5", "#fc8d62")
-# my_col <- c("#ffffbf", "#fc8d59", "#91bfdb")
-# my_col <- c("#edf8b1", "#7fcdbb", "#2c7fb8")
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
 my_comp_type <- "rose"
 my_comp_lable <- 3
 my_comp_size <- 5
 my_comp_pos <- c("right", "top")
 
-
 final_res_curr <- rast("./4_output/Result/TODAY_Final_map.tif")
 final_res_fut <- rast("./4_output/Result/FUTURE_Final_map.tif")
-
 my_bbox <- matrix(c(-1275875, 4470206, 3696405, 7907273), byrow = F, nrow = 2) %>% bbox()
 
 curr_fin <- tm_shape(final_res_curr[["final"]], bbox = my_bbox) + tm_raster(palette = my_col, title = "A) Current suitability") +
@@ -1873,10 +1880,11 @@ tmap_arrange(
     fut_std,
     nrow = 2
 )
+
+
 # Germany
 final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")
 final_res_fut <- rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")
-
 
 curr_fin <- tm_shape(final_res_curr[["final"]]) + tm_raster(palette = my_col, title = "A) Current suitability") +
     tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
@@ -1906,7 +1914,6 @@ tmap_arrange(
 
 
 # Predators {.tabset}
-
 ## Wolf
 First, georeference the map from the paper: [Kramer-Schadt et al., 2020](https://doi.org/10.19217/skr556)
 
@@ -1915,7 +1922,6 @@ First, georeference the map from the paper: [Kramer-Schadt et al., 2020](https:/
 wolf_work <- rast("./2_work/predators/wolf_work.tif")
 
 # Crop
-
 wolf_work %<>%
     crop(AOI[AOI$Name == "DEU", ]) %>%
     mask(AOI[AOI$Name == "DEU", ], filename = "./2_work/predators/wolf_work_crop.tif", overwrite = T)
@@ -1925,17 +1931,9 @@ wolf_work2 <- ifel(wolf_work %in% c(176, 234, 147, 148, 206, 197, 142, 149, 186,
 
 
 wolf_work2 <- wolf_work2 %>% sum()
-wolf_work2 %>% plot()
-
 
 # Calculation
-c(
-    wolf_work2,
-    ifel(wolf_work2 %in% seq(100, 900, 1), 10, 0)
-) %>% plot()
-
 ifel(wolf_work2 %in% seq(100, 900, 1), 10, 0) %>% writeRaster("./2_work/predators/wolf_work3.tif", overwrite = T)
-
 
 wbt_resample(
     inputs = "./2_work/predators/wolf_work3.tif",
@@ -1957,13 +1955,9 @@ cls <- data.frame(id = c(0, 11, 12), cover = c("No Overlap/Not Suitable", "1/2 O
 levels(wolf_overlap) <- cls
 
 writeRaster(wolf_overlap, "./4_output/Predators/wolf_overlap.tif", overwrite = T)
-
-plot(rast("./4_output/Predators/wolf_overlap.tif"))
-plot(DE_districts$geometry, add = T)
 ```
 
 ## Fox
-
 Download DOI from: [GBIF](https://doi.org/10.15468/dl.usq8mf).
 
 ```{r}
@@ -2004,15 +1998,14 @@ fox_density %<>% crop(AOI[AOI$Name == "DEU", ]) %>% mask(AOI[AOI$Name == "DEU", 
 
 ## Plot
 ```{r}
-wolf_overlap <- rast("./4_output/predator/wolf_overlap.tif")
+wolf_overlap <- rast("./4_output/Predators/wolf_overlap.tif")
 
 wolf_over <- tm_shape(wolf_overlap) + tm_raster(palette = my_col, title = "B) Wolf overlap") +
     tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
     tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
     tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
 
-fox_density <- rast("./4_output/predator/Fox_density.tif")
-
+fox_density <- rast("./4_output/Predators/Fox_density.tif")
 fox_breaks <- c(0, 25, 50, 100, 200, 400, 800, Inf)
 
 fox_dens <- tm_shape(fox_density) + tm_raster(palette = my_col, title = "C) Fox densityy", breaks = fox_breaks) +
@@ -2032,25 +2025,18 @@ tmap_arrange(
 ```{r}
 ## Today
 final_res_curr <- rast("./4_output/Result/TODAY_Final_map.tif")[["final"]]
-
 truesize <- terra::cellSize(final_res_curr, unit = "km")
-
 EU_curr_area <- terra::zonal(truesize, final_res_curr, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 
-
 ## Future
 final_res_fut <- rast("./4_output/Result/FUTURE_Final_map.tif")[["final"]]
-
 truesize <- terra::cellSize(final_res_fut, unit = "km")
-
 EU_fut_area <- terra::zonal(truesize, final_res_fut, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 
-
 ## Overlap
 writeRaster(rast("./4_output/Result/FUTURE_Final_map.tif")[["final"]], "./4_output/Area/FUTURE_Final_map_final.tif", overwrite = T)
-
 wbt_resample(
     input = "./4_output/Area/FUTURE_Final_map_final.tif",
     output = "./4_output/Area/FUTURE_Final_map_final_hires.tif",
@@ -2060,46 +2046,32 @@ wbt_resample(
 final_res_fut <- rast("./4_output/Area/FUTURE_Final_map_final_hires.tif")
 
 cls <- data.frame(id = c(0, 1, 2), cover = c("No Overlap/Not Suitable", "1/2 Overlap", "Both Overlap"))
-levels(final_res_fut) <- cls
-
+levels(final_res_fut) <- cl
 writeRaster(final_res_fut, "./4_output/Area/FUTURE_Final_map_final_hires2.tif", overwrite = T)
 
 final_res_fut <- rast("./4_output/Area/FUTURE_Final_map_final_hires2.tif")
-
-
 same_class <- final_res_curr == final_res_fut
-
 truesize <- terra::cellSize(same_class, unit = "km")
-
 same_class_area <- terra::zonal(truesize, same_class, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 ```
 
 ## Germany
 ```{r}
+## Today
 final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")[["final"]]
-
 truesize <- terra::cellSize(final_res_curr, unit = "km")
-
 GER_curr_area <- terra::zonal(truesize, final_res_curr, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 
-
-
-# Future
-
+## Future
 final_res_fut <- rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")[["final"]]
-
 truesize <- terra::cellSize(final_res_fut, unit = "km")
-
 GER_fut_area <- terra::zonal(truesize, final_res_fut, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 
-
-
 ## Overlap
 writeRaster(rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")[["final"]], "./4_output/Area/FUTURE_Final_map_GERMANY_final.tif", overwrite = T)
-
 wbt_resample(
     input = "./4_output/Area/FUTURE_Final_map_GERMANY_final.tif",
     output = "./4_output/Area/FUTURE_Final_map_GERMANY_final_hires.tif",
@@ -2107,18 +2079,13 @@ wbt_resample(
 )
 
 final_res_fut <- rast("./4_output/Area/FUTURE_Final_map_GERMANY_final_hires.tif")
-
 cls <- data.frame(id = c(0, 1, 2), cover = c("No Overlap/Not Suitable", "1/2 Overlap", "Both Overlap"))
 levels(final_res_fut) <- cls
-
 writeRaster(final_res_fut, "./4_output/Area/FUTURE_Final_map_GERMANY_final_hires2.tif", overwrite = T)
 
 final_res_fut <- rast("./4_output/Area/FUTURE_Final_map_GERMANY_final_hires2.tif")
-
 same_class <- final_res_curr == final_res_fut
-
 truesize <- terra::cellSize(same_class, unit = "km")
-
 same_class_area <- terra::zonal(truesize, same_class, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 ```
@@ -2127,9 +2094,7 @@ same_class_area <- terra::zonal(truesize, same_class, fun = "sum") %>%
 ```{r}
 ## Overlaping area
 wolf_overlap <- rast("./4_output/Predators/wolf_overlap.tif")
-
 truesize <- terra::cellSize(wolf_overlap, unit = "km")
-
 Wolf_area <- terra::zonal(truesize, wolf_overlap, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 ```
@@ -2148,7 +2113,6 @@ Presences.cv <- all_data$train.df %>%
             filter(pa == 1)
     )
 
-
 all.points <- all_data$train.points %>%
     filter(pa == 1) %>%
     add_row(all_data$test.points %>% filter(pa == 1)) %>%
@@ -2161,16 +2125,13 @@ AOI <- st_read("./3_ready/AOI_border.shp")
 ## Plot
 ```{r}
 EU_environment <- rast("./3_ready/EU_environment.tif")
-
 envMESS <- EU_environment[[
     c("slope", "bio_12", "bio_1", "water_distance", "trees")
 ]] %>%
     brick()
-
 pointsMESS <- Presences.cv %>%
     select(c("slope", "bio_12", "bio_1", "water_distance", "trees")) %>%
     as.data.frame()
-
 mess_raster_high <- mess(
     x = envMESS,
     v = pointsMESS,
@@ -2178,11 +2139,9 @@ mess_raster_high <- mess(
 )
 
 mess_raster_high %<>% rast()
-
 writeRaster(mess_raster_high, "./2_work/MESS_unscaled.tif", overwrite = T)
 
 mess_raster_high <- rast("./2_work/MESS_unscaled.tif")
-
 mess_extr <- terra::extract(mess_raster_high, all.points$geometry %>% st_coordinates()) %>%
     mutate(pa = all.points$pa) %>%
     as_tibble()
@@ -2205,9 +2164,7 @@ levels(mess_raster_high_new) <- cls
 writeRaster(mess_raster_high_new, "./4_output/Result/MESS_final.tif")
 
 my_bbox <- matrix(c(-1275875, 4470206, 3696405, 7907273), byrow = F, nrow = 2) %>% bbox()
-
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
-
 tm_shape(mess_raster_high_new, bbox = my_bbox) + tm_raster(palette = my_col, legend.show = T, title = "MESS analysis") +
     tm_shape(AOI) + tm_borders(col = "black", lwd = 2)
 ```
@@ -2226,7 +2183,6 @@ presence.points %<>%
     as.numeric()
 TWN.env <- Presences.cv[presence.points, ] %>%
     select(all_of(most.important))
-
 
 presence.points <- all.points[all.points$pa == 1, ] %>%
     .[AOI[AOI$Name %!in% c("CHN", "TWN"), ], ]
@@ -2277,7 +2233,6 @@ g_plot1 <- grouped_ggbetweenstats(
     point.args = list(alpha = 0),
     violin.args = list(aes(col = country), fill = NA, scale = "width", adjust = 1 / 2),
     results.subtitle = T,
-    # subtitle = list("hi"),
     xlab = "Country",
     ylab = "Value",
     centrality.plotting = T,
@@ -2303,7 +2258,6 @@ world_border <- st_read("./3_ready/WORLD_border.shp")
 AOI <- st_read("./3_ready/AOI_border.shp")
 
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
-
 
 tm_shape(world_border) +
     tm_fill(my_col[1]) +
