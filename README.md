@@ -1,7 +1,7 @@
 # Muntiacus_reevesi
 __Muntjacs invading Germany__ Potential distribution of the small Deer (Cervidae) species Reeves’ Muntjac (Muntiacus reevesi) in Germany - Code documentation
 
-The following is the complete code documentation to the project with the name mentioned above.
+This is the complete code documentation to the project.
 
 A first insight can be found [here](https://www.biogeo.uni-bayreuth.de/biogeo/de/pub/html/16/168792/P_2.05_Louis-Marvin_Sander_Muntjacs_invading_europe.pdf).
 
