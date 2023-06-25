@@ -1667,11 +1667,43 @@ model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pa
 ```
 
 ## Variable importance
+
+Plots for checking each  prediction subset
+
 ```{r}
 tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
     apply(1:2, mean) %>%
-    as_tibble() %>%
-    reframe(mean = V1, sd = V2)
+    as_tibble() %>% 
+    mutate(mean = V1, sd = V2)
+
+# Mean Importance in percent over all chains and iterations
+ggplot(tree_vars_imp_mean * 100, aes(y = rownames(tree_vars_imp[[1]]), x = mean)) +
+    geom_point() +
+    geom_pointrange(aes(xmin = mean - sd, xmax = mean + sd)) +
+    xlab("Permutation importance (percentage in which the predictor is responsible for a new branch) + mean SD across the chains and CV-runs") +
+    ylab("Predictors in BART component")
+
+
+# Convert matrix to data frame for use in ggplot2
+my_dataframe <- reshape2::melt(tree_vars_imp, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp[[1]]), max(L2) * 2))
+
+# Advanced plot
+# X-Axis = Iterations
+# Y-Axis = Variable importance
+# Boxplot = Importance of that variable over the CV-runs
+# Line = Exact variable importance per iteration
+ggplot(my_dataframe %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
+    geom_line(aes(col = name)) +
+    geom_boxplot(aes(col = name), fill = NA)
+```
+
+Final variable importance plot
+TODO: MACHEN!
+```{r}
+tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
+    apply(1:2, mean) %>%
+    as_tibble() %>% 
+    mutate(mean = V1, sd = V2)
 
 # Mean Importance in percent over all chains and iterations
 ggplot(tree_vars_imp_mean * 100, aes(y = rownames(tree_vars_imp[[1]]), x = mean)) +
