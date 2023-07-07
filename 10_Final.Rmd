@@ -2284,7 +2284,31 @@ for (i in 1:5) {
 g_plot1
 ```
 
-# World/AOI Plot
+# Additional Plots
+## Countries with Muntjac occurrences
+
+```{r}
+AOI <- st_read("./3_ready/AOI_border.shp")
+all_occs <- st_read("./3_ready/all_occs.shp")
+my_col <- c("#ffffff", "#99d8c9", "#1e854b")
+
+point_aoi_inter <- st_intersects(all_occs, AOI, sparse = F) %>% 
+    apply(., 2, function(x) table(x)["TRUE"])
+AOI %<>% add_column(point_aoi_inter) 
+
+tm_shape(AOI) + 
+    tm_fill(col = "point_aoi_inter", palette = "Greens", style = "log10", title = "Occurrences \nper Country") +
+    tm_borders(col = "black") +
+    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos) +
+    tm_layout(legend.position = c("left", "top"), legend.text.size = 1.7)
+
+
+
+```
+
+
+## World/AOI Plot
+
 ```{r}
 world_border <- st_read("./3_ready/WORLD_border.shp")
 AOI <- st_read("./3_ready/AOI_border.shp")
