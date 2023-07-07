@@ -16,7 +16,6 @@ output:
 knitr::opts_chunk$set(eval = FALSE)
 ```
 
-
 Generate the data outside of the repository.
 ```{r}
 setwd(paste0(getwd(), "/.."))
