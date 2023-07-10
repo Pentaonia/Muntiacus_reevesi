@@ -1190,49 +1190,58 @@ Pres.points <- all_data$train.points %>%
     filter(pa == 1) %>%
     add_row(all_data$test.points %>% filter(pa == 1))
 
-Presences.join <- Pres.points %>% cbind(Presences) %>% mutate(Name = seq(1, nrow(.), 1)) %>% st_transform()
+Presences.join <- Pres.points %>%
+    cbind(Presences) %>%
+    mutate(Name = seq(1, nrow(.), 1)) %>%
+    st_transform()
 
 AOI <- st_read("./3_ready/AOI_border.shp")
 
 autocorr <- list()
 
 ## GB
-autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("GBR", "IRL"),]])
-Window(autocorr$muntgbif_GB_ppp) <- as.owin(AOI[AOI$Name %in% c("GBR", "IRL"),])
+autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("GBR", "IRL"), ]])
+Window(autocorr$muntgbif_GB_ppp) <- as.owin(AOI[AOI$Name %in% c("GBR", "IRL"), ])
 unitname(autocorr$muntgbif_GB_ppp) <- "m/m"
 
 ## Taiwan
-autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("TWN"),]])
-Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN"),])
+autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("TWN"), ]])
+Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN"), ])
 unitname(autocorr$muntgbif_TW_ppp) <- "m/m"
 
 # Test against 100 Monte Carlo iterations of complete spatial randomness
-autocorr$GB_fest <-  envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
-autocorr$TW_fest <-  envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
+autocorr$GB_fest <- envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0, 14000, 500)))
+autocorr$TW_fest <- envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0, 14000, 500)))
 
 ## GB Plot
-autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r/1000, y = obs)) +
-  geom_line(aes(), col = "black", lwd = 1.5) +
-  geom_line(aes(y = theo), col = "red", lwd = 1.5) +
-  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "red", alpha = 0.5, show.legend = FALSE) +
-  scale_colour_manual(name = 'F(r) statistics', 
-    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
-  ylab("F(r)") + xlab("Radius (km)")+
-  ggtitle("A)")
+autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r / 1000, y = obs)) +
+    geom_line(aes(), col = "black", lwd = 1.5) +
+    geom_line(aes(y = theo), col = "red", lwd = 1.5) +
+    geom_ribbon(aes(ymin = lo, ymax = hi), fill = "red", alpha = 0.5, show.legend = FALSE) +
+    scale_colour_manual(
+        name = "F(r) statistics",
+        values = c("black" = "black", "red" = "red"), labels = c("Observed", "Theoretical")
+    ) +
+    ylab("F(r)") +
+    xlab("Radius (km)") +
+    ggtitle("A)")
 
 ## TW Plot
-autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r/1000, y = obs)) +
-  geom_line(aes(col = "black"), lwd = 1.5) +
-  geom_line(aes(y = theo, col = "red"), lwd = 1.5, show.legend = F) +
-  geom_ribbon(aes(ymin = lo, ymax = hi, fill = "red"), alpha = 0.5, show.legend = FALSE) +
-  scale_colour_manual(name = 'F(r) statistics', 
-    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
-  ylab("F(r)") + xlab("Radius (km)") +
-  ggtitle("B)")
+autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r / 1000, y = obs)) +
+    geom_line(aes(col = "black"), lwd = 1.5) +
+    geom_line(aes(y = theo, col = "red"), lwd = 1.5, show.legend = F) +
+    geom_ribbon(aes(ymin = lo, ymax = hi, fill = "red"), alpha = 0.5, show.legend = FALSE) +
+    scale_colour_manual(
+        name = "F(r) statistics",
+        values = c("black" = "black", "red" = "red"), labels = c("Observed", "Theoretical")
+    ) +
+    ylab("F(r)") +
+    xlab("Radius (km)") +
+    ggtitle("B)")
 
 
-#Inter-event distribution for Taiwanese and Brittish muntjac occurrences
-grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55,3))
+# Inter-event distribution for Taiwanese and Brittish muntjac occurrences
+grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55, 3))
 
 
 
@@ -1240,43 +1249,49 @@ grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(
 # Not really needed, just for the sake of completeness
 
 ## Europe
-autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %!in% c("TWN", "CHN"),]])
-Window(autocorr$muntgbif_GB_ppp) <- as.owin(AOI[AOI$Name  %!in% c("TWN", "CHN"),])
+autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %!in% c("TWN", "CHN"), ]])
+Window(autocorr$muntgbif_GB_ppp) <- as.owin(AOI[AOI$Name %!in% c("TWN", "CHN"), ])
 unitname(autocorr$muntgbif_GB_ppp) <- "m/m"
 
 ## ASIA
-autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("TWN", "CHN"),]])
-Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN", "CHN"),])
+autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("TWN", "CHN"), ]])
+Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN", "CHN"), ])
 unitname(autocorr$muntgbif_TW_ppp) <- "m/m"
 
 # Test against 100 Monte Carlo Iterations of complete spatial randomness
-autocorr$GB_fest <-  envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
-autocorr$TW_fest <-  envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0,14000,500)))
+autocorr$GB_fest <- envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0, 14000, 500)))
+autocorr$TW_fest <- envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 100, funargs = list(r = seq(0, 14000, 500)))
 
 
 ## Europe Plot
-autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r/1000, y = obs)) +
-  geom_line(aes(), col = "black", lwd = 1.5) +
-  geom_line(aes(y = theo), col = "red", lwd = 1.5) +
-  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "red", alpha = 0.5, show.legend = FALSE) +
-  scale_colour_manual(name = 'F(r) statistics', 
-    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
-  ylab("F(r)") + xlab("Radius (km)")+
-  ggtitle("A)")
+autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r / 1000, y = obs)) +
+    geom_line(aes(), col = "black", lwd = 1.5) +
+    geom_line(aes(y = theo), col = "red", lwd = 1.5) +
+    geom_ribbon(aes(ymin = lo, ymax = hi), fill = "red", alpha = 0.5, show.legend = FALSE) +
+    scale_colour_manual(
+        name = "F(r) statistics",
+        values = c("black" = "black", "red" = "red"), labels = c("Observed", "Theoretical")
+    ) +
+    ylab("F(r)") +
+    xlab("Radius (km)") +
+    ggtitle("A)")
 
 ## Asia Plot
-autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r/1000, y = obs)) +
-  geom_line(aes(col = "black"), lwd = 1.5) +
-  geom_line(aes(y = theo, col = "red"), lwd = 1.5, show.legend = F) +
-  geom_ribbon(aes(ymin = lo, ymax = hi, fill = "red"), alpha = 0.5, show.legend = FALSE) +
-  scale_colour_manual(name = 'F(r) statistics', 
-    values = c('black'='black','red'='red'), labels = c('Observed','Theoretical')) +
-  ylab("F(r)") + xlab("Radius (km)") +
-  ggtitle("B)")
+autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r / 1000, y = obs)) +
+    geom_line(aes(col = "black"), lwd = 1.5) +
+    geom_line(aes(y = theo, col = "red"), lwd = 1.5, show.legend = F) +
+    geom_ribbon(aes(ymin = lo, ymax = hi, fill = "red"), alpha = 0.5, show.legend = FALSE) +
+    scale_colour_manual(
+        name = "F(r) statistics",
+        values = c("black" = "black", "red" = "red"), labels = c("Observed", "Theoretical")
+    ) +
+    ylab("F(r)") +
+    xlab("Radius (km)") +
+    ggtitle("B)")
 
 
-#Inter-event distribution for European and Asian muntjac occurrences
-grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55,3))
+# Inter-event distribution for European and Asian muntjac occurrences
+grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55, 3))
 ```
 
 # Collinearity
@@ -1461,7 +1476,6 @@ all.points <- all_data$train.points %>%
 #################### Automatic CV loop #######################
 
 for (i in 1:cv.runs) {
-
     # Random assembling of the data
     sample.pres <- sample(
         c(TRUE, FALSE),
@@ -1522,7 +1536,7 @@ for (i in 1:cv.runs) {
         divide_by(sum(.$mean))
 
     # Inclusion of coltake
-    # tree_vars_imp[[i]] <- model.stan.cv[[i]]$bart_varcount %>% 
+    # tree_vars_imp[[i]] <- model.stan.cv[[i]]$bart_varcount %>%
     #     .[,coltake[1],] %>%
     #     rowMeans() %>%
     #     as.data.frame() %>%
@@ -1539,27 +1553,27 @@ for (i in 1:cv.runs) {
 
     # Create a ROCR-object from the prediction + calculate several indices
     evaluation.cv[[i]] <- ROCR::prediction(testpred, PA_test.cv$pa)
-    
+
     auc.cv[[i]] <- ROCR::performance(evaluation.cv[[i]], measure = "auc")@y.values %>%
         unlist() # area under the curve
-    
+
     tss[[i]] <- max(
         ROCR::performance(evaluation.cv[[i]], measure = "tpr")@y.values %>%
             unlist() +
             ROCR::performance(evaluation.cv[[i]], measure = "tnr")@y.values %>%
             unlist() - 1
     ) # true skill statistics
-    
+
     bri[[i]] <- get_and_calc_bri(evaluation.cv[[i]]) # brier score
-    
+
     tss.thresh[[i]] <- ROCR::performance(evaluation.cv[[i]], measure = "acc")@x.values[[1]][which(ROCR::performance(evaluation.cv[[i]], measure = "acc")@y.values[[1]] == max(ROCR::performance(evaluation.cv[[i]], measure = "acc")@y.values[[1]]))] %>%
         unlist() %>%
         min() # "best" threshold at maximum accurracy
-    
+
     accurr[[i]] <- max(ROCR::performance(evaluation.cv[[i]], measure = "acc")@y.values[[1]]) # accurracy
-    
+
     acceptance[[i]] <- ifelse(accurr[[i]] > 0.9 & auc.cv[[i]] > 0.9 & bri[[i]] < 0.05, TRUE, FALSE) # can the model be accepted?
-    
+
     convergence[[i]] <- model.stan.cv[[i]]$stan[6, , ] # internal convergence test
 
     # prediction if model is accepted
@@ -1672,7 +1686,7 @@ Plots for checking each  prediction subset
 ```{r}
 tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
     apply(1:2, mean) %>%
-    as_tibble() %>% 
+    as_tibble() %>%
     mutate(mean = V1, sd = V2)
 
 # Mean Importance in percent over all chains and iterations
@@ -1701,7 +1715,7 @@ TODO: MACHEN!
 ```{r}
 tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
     apply(1:2, mean) %>%
-    as_tibble() %>% 
+    as_tibble() %>%
     mutate(mean = V1, sd = V2)
 
 # Mean Importance in percent over all chains and iterations
@@ -1880,6 +1894,8 @@ DE_districts <- st_read("./1_input/German_States/vg2500_12-31.tm32.shape/vg2500/
 EU-wide and Germany-wide plots of the suitability, for today, future prediction and the standard deviations between all model runs
 
 ```{r}
+dir.create("./4_output/Plots")
+
 # Europe
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
 my_comp_type <- "rose"
@@ -1918,28 +1934,56 @@ final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")
 final_res_fut <- rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")
 
 curr_fin <- tm_shape(final_res_curr[["final"]]) + tm_raster(palette = my_col, title = "A) Current suitability") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
+    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
     tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2)
 
 fut_fin <- tm_shape(final_res_fut[["final"]]) + tm_raster(palette = my_col, title = "B) Future suitability") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
+    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
     tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2)
 
 curr_std <- tm_shape(final_res_curr[["std"]]) + tm_raster(style = "cont", palette = my_col, title = "C) Current prediction \nstandard deviation") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
+    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
     tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2)
 
 fut_std <- tm_shape(final_res_fut[["std"]]) + tm_raster(style = "cont", palette = my_col, title = "D) Future prediction \nstandard deviation") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
+    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
     tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
     tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
 
-tmap_arrange(
-    curr_fin,
+fut_fin_leg <- fut_fin + tm_layout(legend.only = T)
+
+curr_std_leg <- curr_std + tm_layout(legend.only = T)
+
+
+
+
+
+library(grid)
+
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(nrow = 3, ncol = 3)))
+
+print(
+    curr_std + tm_layout(legend.only = T),
+    vp = viewport(layout.pos.row = 1, layout.pos.col = 1)
+)
+
+print(
+    fut_fin + tm_layout(legend.only = T),
+    vp = viewport(layout.pos.row = 2, layout.pos.col = 1)
+)
+
+print(tmap_grob(curr_fin), vp = viewport(layout.pos.row = 1:2, layout.pos.col = 2:3))
+print(curr_std, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+print(fut_fin, vp = viewport(layout.pos.row = 3, layout.pos.col = 2))
+print(fut_std, vp = viewport(layout.pos.row = 3, layout.pos.col = 3))
+
+
+Ger_arrange <- tmap_arrange(
     fut_fin,
     curr_std,
     fut_std,
-    nrow = 2
+    nrow = 1
 )
 ```
 
@@ -1978,6 +2022,9 @@ rast("./2_work/predators/wolf_work4.tif") %>%
     mask(AOI[AOI$Name == "DEU", ], filename = "./2_work/predators/wolf_work5.tif", overwrite = T)
 
 wolf_work5 <- rast("./2_work/predators/wolf_work5.tif")
+wolf_work5 <- ifel(wolf_work5 > 8, 10, 0)
+writeRaster(wolf_work5, "./2_work/predators/wolf_work5.tif", overwrite = T)
+
 final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")[["final"]]
 
 wolf_overlap <- ifel((final_res_curr + wolf_work5) <= 10, 0, (final_res_curr + wolf_work5))
@@ -1986,6 +2033,52 @@ cls <- data.frame(id = c(0, 11, 12), cover = c("No Overlap/Not Suitable", "1/2 O
 levels(wolf_overlap) <- cls
 
 writeRaster(wolf_overlap, "./4_output/Predators/wolf_overlap.tif", overwrite = T)
+```
+
+## Lynx
+
+```{r}
+# Load georeferenced map
+lynx_work <- rast("./2_work/predators/Lynx_referenced.tif") %>%
+    terra::project(AOI)
+
+# Crop
+lynx_work %<>%
+    crop(AOI[AOI$Name == "DEU", ]) %>%
+    mask(AOI[AOI$Name == "DEU", ], filename = "./2_work/predators/lynx_work_crop.tif", overwrite = T)
+
+
+lynx_work2 <- ifel(lynx_work %in% c(0, 1, 211, 183, 206), 0, lynx_work)
+
+
+lynx_work2 <- lynx_work %>% sum()
+
+# Calculation
+ifel(lynx_work2 %in% c(seq(10, 30, 1), seq(450, 500, 1)), 10, 0) %>% writeRaster("./2_work/predators/lynx_work3.tif", overwrite = T)
+
+wbt_resample(
+    inputs = "./2_work/predators/lynx_work3.tif",
+    output = "./2_work/predators/lynx_work4.tif",
+    base = "./4_output/Result/TODAY_Final_map.tif",
+    method = "cc"
+)
+
+rast("./2_work/predators/lynx_work4.tif") %>%
+    crop(AOI[AOI$Name == "DEU", ]) %>%
+    mask(AOI[AOI$Name == "DEU", ], filename = "./2_work/predators/lynx_work5.tif", overwrite = T)
+
+lynx_work5 <- rast("./2_work/predators/lynx_work5.tif")
+lynx_work5 <- ifel(lynx_work5 > 2, 10, 0)
+writeRaster(lynx_work5, "./2_work/predators/lynx_work5.tif", overwrite = T)
+
+final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")[["final"]]
+
+lynx_overlap <- ifel((final_res_curr + lynx_work5) <= 3, 0, (final_res_curr + lynx_work5))
+
+cls <- data.frame(id = c(0, 11, 12), cover = c("No Overlap/Not Suitable", "1/2 Overlap", "Both Overlap"))
+levels(lynx_overlap) <- cls
+
+writeRaster(lynx_overlap, "./4_output/Predators/lynx_overlap.tif", overwrite = T)
 ```
 
 ## Fox
@@ -2031,10 +2124,18 @@ fox_density %<>% crop(AOI[AOI$Name == "DEU", ]) %>% mask(AOI[AOI$Name == "DEU", 
 ```{r}
 wolf_overlap <- rast("./4_output/Predators/wolf_overlap.tif")
 
-wolf_over <- tm_shape(wolf_overlap) + tm_raster(palette = my_col, title = "B) Wolf overlap") +
+wolf_over <- tm_shape(wolf_overlap) + tm_raster(palette = my_col, title = "A) Wolf overlap") +
     tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
     tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
     tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
+
+lynx_overlap <- rast("./4_output/Predators/lynx_overlap.tif")
+
+lynx_over <- tm_shape(lynx_overlap) + tm_raster(palette = my_col, title = "B) Lynx overlap") +
+    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
+    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
+    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
+
 
 fox_density <- rast("./4_output/Predators/Fox_density.tif")
 fox_breaks <- c(0, 25, 50, 100, 200, 400, 800, Inf)
@@ -2046,6 +2147,7 @@ fox_dens <- tm_shape(fox_density) + tm_raster(palette = my_col, title = "C) Fox 
 
 tmap_arrange(
     wolf_over,
+    lynx_over,
     fox_dens,
     nrow = 1
 )
@@ -2128,6 +2230,34 @@ wolf_overlap <- rast("./4_output/Predators/wolf_overlap.tif")
 truesize <- terra::cellSize(wolf_overlap, unit = "km")
 Wolf_area <- terra::zonal(truesize, wolf_overlap, fun = "sum") %>%
     mutate(proportion = area / sum(area))
+
+lynx_overlap <- rast("./4_output/Predators/lynx_overlap.tif")
+truesize <- terra::cellSize(lynx_overlap, unit = "km")
+Lynx_area <- terra::zonal(truesize, lynx_overlap, fun = "sum") %>%
+    mutate(proportion = area / sum(area))
+
+## General cover of predators
+
+wolf_cover <- rast("./2_work/predators/wolf_work5.tif")
+truesize <- terra::cellSize(wolf_cover, unit = "km")
+Wolf_cover_area <- terra::zonal(truesize, wolf_cover, fun = "sum") %>%
+    mutate(proportion = area / sum(area))
+
+lynx_cover <- rast("./2_work/predators/lynx_work5.tif")
+truesize <- terra::cellSize(lynx_cover, unit = "km")
+Lynx_cover_area <- terra::zonal(truesize, lynx_cover, fun = "sum") %>%
+    mutate(proportion = area / sum(area))
+
+
+c(
+    "Wolf_Muntjac_overlap" = Wolf_area[2:3, 3] %>% sum(),
+    "Wolf_Cover_Germany" = Wolf_cover_area[2, 3]
+)
+
+c(
+    "Lynx_Muntjac_overlap" = Lynx_area[2:3, 3] %>% sum(),
+    "Lynx_Cover_Germany" = Lynx_cover_area[2, 3] - 0.01 # minus 1 % due to high digitalization fragments within the map
+)
 ```
 
 # MESS
@@ -2241,7 +2371,7 @@ all.melt <- melt(other.env) %>%
         )
     )
 
-all.melt %<>% 
+all.melt %<>%
     as_tibble() %>%
     mutate(variable = case_when(
         variable == "slope" ~ "Slope",
@@ -2249,8 +2379,7 @@ all.melt %<>%
         variable == "bio_1" ~ "Mean Temperature",
         variable == "water_distance" ~ "Water Distance",
         variable == "trees" ~ "Tree Density"
-        )
-    )
+    ))
 
 g_plot1 <- grouped_ggbetweenstats(
     data = all.melt,
@@ -2291,18 +2420,15 @@ AOI <- st_read("./3_ready/AOI_border.shp")
 all_occs <- st_read("./3_ready/all_occs.shp")
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
 
-point_aoi_inter <- st_intersects(all_occs, AOI, sparse = F) %>% 
+point_aoi_inter <- st_intersects(all_occs, AOI, sparse = F) %>%
     apply(., 2, function(x) table(x)["TRUE"])
-AOI %<>% add_column(point_aoi_inter) 
+AOI %<>% add_column(point_aoi_inter)
 
-tm_shape(AOI) + 
+tm_shape(AOI) +
     tm_fill(col = "point_aoi_inter", palette = "Greens", style = "log10", title = "Occurrences \nper Country") +
     tm_borders(col = "black") +
     tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos) +
     tm_layout(legend.position = c("left", "top"), legend.text.size = 1.7, legend.title.size = 1.7)
-
-
-
 ```
 
 
