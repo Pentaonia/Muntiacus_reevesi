@@ -2039,7 +2039,7 @@ wolf_over <- tm_shape(wolf_overlap) + tm_raster(palette = my_col, title = "B) Wo
 fox_density <- rast("./4_output/Predators/Fox_density.tif")
 fox_breaks <- c(0, 25, 50, 100, 200, 400, 800, Inf)
 
-fox_dens <- tm_shape(fox_density) + tm_raster(palette = my_col, title = "C) Fox densityy", breaks = fox_breaks) +
+fox_dens <- tm_shape(fox_density) + tm_raster(palette = my_col, title = "C) Fox density", breaks = fox_breaks) +
     tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
     tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
     tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
@@ -2299,7 +2299,7 @@ tm_shape(AOI) +
     tm_fill(col = "point_aoi_inter", palette = "Greens", style = "log10", title = "Occurrences \nper Country") +
     tm_borders(col = "black") +
     tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos) +
-    tm_layout(legend.position = c("left", "top"), legend.text.size = 1.7)
+    tm_layout(legend.position = c("left", "top"), legend.text.size = 1.7, legend.title.size = 1.7)
 
 
 
