@@ -201,7 +201,7 @@ extraction_format <- function(start, species, most.important = NULL, randoms = N
 
 ### wbt_resample bugfix
 
-I do not know when it is fixed, therefore I included the fixed function here.
+I do not know when it is fixed, therefore I included the fixed function here. For more information see issue on [GitHub](https://github.com/opengeos/whiteboxR/issues/112).
 For documentation see: [WhiteboxTools](https://cran.r-project.org/web/packages/whitebox/whitebox.pdf).
 
 ```{r}
