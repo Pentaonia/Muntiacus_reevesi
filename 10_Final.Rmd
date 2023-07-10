@@ -65,7 +65,7 @@ Negated version of the "Value Matching"-Function.
 ```
 
 ### Get n Minimal/Maximal result
-List the first n results of a data frame sorted by a column. Interesting for seeing the most collinear values late on.
+Lists the first n results of a data frame sorted by a column. Interesting for seeing the most collinear values later on.
 
 Input:
 
@@ -93,7 +93,7 @@ owncount <- function(a, b, c = ncol(a), mode = c("max", "min")) {
 It automatically appends the data set with randomly sampled absence points based on the extent of the SpatRaster and creates data frames that can be used in the modelling process.
 The data have to be in the same coordinate reference system.
 
-Attention: Here is implemented directly the rule of thumb after Huberty (1994) reviewed in [Fielding, A. H., & Bell, J. F. (1997)](https://doi.org/10.1017/S0376892997000088) for splitting into train and test data.
+Attention: This is the direct implementation of the rule of thumb after Huberty (1994) reviewed in [Fielding, A. H., & Bell, J. F. (1997)](https://doi.org/10.1017/S0376892997000088) for splitting into train and test data.
 
 Inputs:
 
@@ -303,8 +303,8 @@ This can be used if there is no raster available, for example if you want to use
 
 Input:
 
-- __a__ = Sf object, here presence/absence points.
-- __b__ = Sf object, here polygons of cities, lines of streets, .... It can also be a named list if more than one variable should be added.
+- __a__ = Sf object, here: presence/absence points.
+- __b__ = Sf object, here: polygons of cities, lines of streets, .... It can also be a named list if more than one variable should be added.
 
 Output:
 
@@ -328,12 +328,12 @@ nearestdistance_to <- function(a, b) {
 
 ### Weights 
 Creation of weights according to the number of features in a radius, means 0.5/n where n = number of points in a radius. 
-That means, if n = 1 than the occurrence has one neighbour, therefore 0.5/1 = 0.5 and bot occurrences are weighted 0.5.
+That means, if n = 1, then the occurrence has one neighbour, therefore 0.5/1 = 0.5 and bot occurrences are weighted 0.5.
 Default: The radius of a circle that results in the average territorial size of the muntjac according to [Chapman et. al (1993)](https://doi.org/10.1111/j.1469-7998.1993.tb02660.x).
 
 Input:
 
-- __sf_geom__ = sf object of points, here muntjac occurrences
+- __sf_geom__ = sf object of points, here: muntjac occurrences
 - __buffer_radius__ = radius of a circle that results in the size of an average territory
 
 Output:
@@ -479,7 +479,7 @@ Input:
 - __newdata__ = Object created with read.table("*_na-free.txt").
 - __complete_cases__ = Object created with read.table("*_comp_cases.txt").
 - __base_raster__ = Raster with the same properties as the raster fron which the newdata object was created. --> The function needs to know on which basis the resulting raster has to be built.
-- __type__ = One of types of predict.stan4bartFit.
+- __type__ = One of the types of predict.stan4bartFit.
 - __coltake__ = Object created in the for-loop lateron, is only needed if you want only a part of the iterations/chains in your result. It simply is a vector of values $\in$ [1, iterations*chains] for every iteration (of chains) that should be used.
 
 As the predicted chains and iterations are combined to one big matrix (colbind, one column per iteration) it aplies for creating __coltake__:
@@ -531,7 +531,7 @@ fast_predict <- function(model, newdata, complete_cases, base_raster, type = "ev
 ```
 
 #### Finding the threshold
-Here the function tries to find the threshold for a 1/0 classification of a map, according to a specific accurracy/confidence.
+This function tries to find the threshold for a 1/0 classification of a map, according to a specific accurracy/confidence.
 
 Input:
 
@@ -566,7 +566,7 @@ dir.create("./4_output")
 
 ## Variables 
 ### Boundaries World and Area of interest {.tabset}
-Choosen Coutries as area of interest (AOI).
+Chosen Countries as area of interest (AOI).
 ```{r}
 countryCodes <- tibble(isoA3 = vector(length = 40))
 countryCodes$isoA3 <- c("AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE", "GBR", "TWN", "CHE", "NOR", "BLR", "UKR", "SRB", "MKD", "MNE", "BIH", "HRV", "MDA", "CHN")
@@ -823,10 +823,10 @@ landCover <- rast("./2_work/landcover_merge.tif")
 
 ### Distance maps to Urban areas, Water and streets {.tabset}
 #### Step I
-The fist step was the rasterization of the urban areas, waters and streets in QGIS. Export them as "WORLD_roads_raster.tif", "WORLD_urban_raster.tif" and "WORLD_water_raster.tif" with CRS = EPSG4087. R works too ineficient on large rasters. You can also try the ´fasterize´ function but its not working with MULTILINESTRING at the moment or use the "RQGIS"-Package.
+The fist step was the rasterization of the urban areas, waters and streets in QGIS. Export them as "WORLD_roads_raster.tif", "WORLD_urban_raster.tif" and "WORLD_water_raster.tif" with CRS = EPSG4087. R works too inefficiently on large rasters. You can also try the ´fasterize´ function, though its not working with MULTILINESTRING at the moment. Alternatively, use the "RQGIS"-Package.
 
 #### Step II
-NAs have to be set to 0 for further processing in whitebox. Additionally the rasters were croped to the AOI.
+NAs have to be set to 0 for further processing in whitebox. Additionally, the rasters were cropped to the AOI.
 
 ```{r}
 # Roads
@@ -852,7 +852,7 @@ writeRaster(WORLD_water_distance, "./2_work/AOI_water_raster_0_1.tif", overwrite
 ```
 
 #### Step III
-Calculade eucledian distance maps via whitebox.
+Calculade euclidean distance maps via whitebox.
 
 ```{r}
 wbt_euclidean_distance(
@@ -874,7 +874,7 @@ wbt_euclidean_distance(
 ### Combine
 Combine all, crop to AOI and resample for faster preliminary model runs.
 
-Note: The distane maps are not available in world size, therefore the distances to roads, waters and urban areas have to be extracted on an other way later on.
+Note: The distane maps are not available in world size, therefore the distances to roads, waters and urban areas have to be extracted in another way later on.
 That means that the AOI_environment.tif is fully self contained in all environmental factors that are needed but the WORLD_environment.tif is not.
 
 ```{r}
@@ -977,7 +977,7 @@ writeRaster(future_climate, "./2_work/future data/EU_climate.tif", overwrite = T
 #### Future Urban
 Source: [Land-Use Harmonization²](https://luh.umd.edu/data.shtml) and [Extractions made available here](https://doi.org/10.17161/bi.v16i1.15483)
 
-For prediction only Europe is needed.
+Only Europe is needed for prediction.
 ```{r}
 future_urban <- rast("./1_input/future data/CMIP6_Land_Use_Harmonization_urban_SSP5_85_2071.tif")
 
@@ -1141,11 +1141,11 @@ save(all_data, file = "./3_ready/model input/PA_AOI.Rdata")
 load("./3_ready/model input/PA_AOI.Rdata")
 ```
 
-Now jump to the step "Collinearity", afterwards, when determine the least collinear variables, proceed here.
+Now jump to the step "Collinearity". Once you have determined the least collinear variables, proceed here.
 
 ## Prediction environment
 
-Define the choosen predictors and choosen randoms from the step "Collinearity".
+Define the chosen predictors and chosen randoms from the step "Collinearity".
 
 ```{r}
 most.important <- c("bio_1", "bio_12", "trees", "water_distance", "slope")
@@ -1175,7 +1175,7 @@ raster_prep_stan4bart(
 ```
 
 # Spatial Cluster Analysis
-Analysis of spatial muntiac occurrence pattern. Assumed is a strong spatial clustering.
+Analysis of spatial muntiac occurrence pattern. Strong spatial clustering is assumed.
 
 ```{r}
 load("./3_ready/model input/PA_AOI.Rdata")
@@ -1681,7 +1681,7 @@ model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pa
 
 ## Variable importance
 
-Plots for checking each  prediction subset
+Plots for checking each prediction subset
 
 ```{r}
 tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
@@ -1812,7 +1812,7 @@ terra::writeRaster(final_res, "./4_output/Result/TODAY_Final_map.tif", overwrite
 ```
 
 ### Future {.tabset}
-#### Mean over all CV-Runs and base datasets
+#### Mean overall CV-Runs and base datasets
 ```{r}
 ###### Europe
 Fut_EU_mean <- rast("./4_output/5. EU_hig_res_CV_PRED_future/Run_mean.tif")
@@ -1891,7 +1891,7 @@ DE_districts <- st_read("./1_input/German_States/vg2500_12-31.tm32.shape/vg2500/
     st_transform(st_crs(AOI))
 ```
 
-EU-wide and Germany-wide plots of the suitability, for today, future prediction and the standard deviations between all model runs
+EU-wide and Germany-wide plots of the suitability for today, future prediction, and the standard deviations between all model runs
 
 ```{r}
 dir.create("./4_output/Plots")
@@ -2225,7 +2225,7 @@ same_class_area <- terra::zonal(truesize, same_class, fun = "sum") %>%
 
 ## Predators
 ```{r}
-## Overlaping area
+## Overlapping area
 wolf_overlap <- rast("./4_output/Predators/wolf_overlap.tif")
 truesize <- terra::cellSize(wolf_overlap, unit = "km")
 Wolf_area <- terra::zonal(truesize, wolf_overlap, fun = "sum") %>%
@@ -2236,7 +2236,7 @@ truesize <- terra::cellSize(lynx_overlap, unit = "km")
 Lynx_area <- terra::zonal(truesize, lynx_overlap, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 
-## General cover of predators
+## General coverage of predators
 
 wolf_cover <- rast("./2_work/predators/wolf_work5.tif")
 truesize <- terra::cellSize(wolf_cover, unit = "km")
@@ -2331,7 +2331,7 @@ tm_shape(mess_raster_high_new, bbox = my_bbox) + tm_raster(palette = my_col, leg
 ```
 
 
-# Vaiable range
+# Variable range
 Plots between Europe and Asia
 
 ```{r}
