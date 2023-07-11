@@ -328,7 +328,7 @@ nearestdistance_to <- function(a, b) {
 
 ### Weights 
 Creation of weights according to the number of features in a radius, means 0.5/n where n = number of points in a radius. 
-That means, if n = 1, then the occurrence has one neighbour, therefore 0.5/1 = 0.5 and bot occurrences are weighted 0.5.
+That means, if n = 1, then the occurrence has one neighbour, therefore 0.5/1 = 0.5 and both occurrences are weighted 0.5.
 Default: The radius of a circle that results in the average territorial size of the muntjac according to [Chapman et. al (1993)](https://doi.org/10.1111/j.1469-7998.1993.tb02660.x).
 
 Input:
