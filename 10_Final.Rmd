@@ -1711,7 +1711,7 @@ ggplot(my_dataframe %>% filter(variable == "mean"), aes(x = L2, y = value, group
 ```
 
 Final variable importance plot
-TODO: MACHEN!
+
 ```{r}
 tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
     apply(1:2, mean) %>%
