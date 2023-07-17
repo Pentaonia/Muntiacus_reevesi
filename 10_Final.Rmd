@@ -49,6 +49,7 @@ library(ggstatsplot)
 library(spatstat)
 library(gridExtra)
 library(xtable)
+library(latex2exp)
 ```
 
 ## Seed
@@ -1782,7 +1783,7 @@ tree_vars_imp_mean_EU <- array(unlist(tree_vars_imp_EU), dim = c(nrow(tree_vars_
 
 
 # Mean Importance in percent over all chains and iterations
-ggplot(tree_vars_imp_mean_EU, aes(y = names, x = mean), size = 2) +
+tree_vars_imp_plot_EU <- ggplot(tree_vars_imp_mean_EU, aes(y = names, x = mean), size = 2) +
     geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
     geom_point(col = "black", size = 3) +
     xlab("Permutation importance in %") +
@@ -1793,7 +1794,8 @@ ggplot(tree_vars_imp_mean_EU, aes(y = names, x = mean), size = 2) +
         axis.text.x = element_text(vjust = -2), 
         axis.title.y = element_text(margin = margin(r = 20)), 
         axis.title.x = element_text(margin = margin(t = 20))
-        )
+        ) +
+    scale_y_discrete(limits=rev)
 
 # Convert matrix to data frame for use in ggplot2
 my_dataframe_EU <- reshape2::melt(tree_vars_imp_EU, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp_EU[[1]]), max(L2) * 2))
@@ -1803,10 +1805,10 @@ my_dataframe_EU <- reshape2::melt(tree_vars_imp_EU, level = 2) %>% mutate(name =
 # Y-Axis = Variable importance
 # Boxplot = Importance of that variable over the CV-runs
 # Line = Exact variable importance per iteration
-ggplot(my_dataframe_EU %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
+tree_vars_imp_plot_EU_adv <- ggplot(my_dataframe_EU %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
     geom_line(aes(col = name)) +
     geom_boxplot(aes(col = name), fill = NA) + 
-        xlab("CV run") +
+        xlab("Cross validation run") +
     ylab("Permutation importance in %") +
     theme_bw() +
     theme(
@@ -1843,7 +1845,7 @@ tree_vars_imp_mean_WORLD <- array(unlist(tree_vars_imp_WORLD), dim = c(nrow(tree
     select(names, mean, sd)
 
 
-ggplot(tree_vars_imp_mean_WORLD, aes(y = names, x = mean), size = 2) +
+tree_vars_imp_plot_WORLD <- ggplot(tree_vars_imp_mean_WORLD, aes(y = names, x = mean), size = 2) +
     geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
     geom_point(col = "black", size = 3) +
     xlab("Permutation importance in %") +
@@ -1854,7 +1856,8 @@ ggplot(tree_vars_imp_mean_WORLD, aes(y = names, x = mean), size = 2) +
         axis.text.x = element_text(vjust = -2), 
         axis.title.y = element_text(margin = margin(r = 20)), 
         axis.title.x = element_text(margin = margin(t = 20))
-        )
+        )+
+    scale_y_discrete(limits=rev)
 
 
 
@@ -1866,10 +1869,10 @@ my_dataframe_WORLD <- reshape2::melt(tree_vars_imp_WORLD, level = 2) %>% mutate(
 # Y-Axis = Variable importance
 # Boxplot = Importance of that variable over the CV-runs
 # Line = Exact variable importance per iteration
-ggplot(my_dataframe_WORLD %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
+tree_vars_imp_plot_WORLD_adv <- ggplot(my_dataframe_WORLD %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
     geom_line(aes(col = name)) +
     geom_boxplot(aes(col = name), fill = NA) + 
-        xlab("CV run") +
+        xlab("Cross validation run") +
     ylab("Permutation importance in %") +
     theme_bw() +
     theme(
@@ -1893,7 +1896,7 @@ tree_vars_imp_mean_TOGETHER <- tibble(
     )
 
 
-ggplot(tree_vars_imp_mean_TOGETHER, aes(y = names, x = mean), size = 2) +
+tree_vars_imp_plot_tog <- ggplot(tree_vars_imp_mean_TOGETHER, aes(y = names, x = mean), size = 2) +
     geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
     geom_point(col = "black", size = 3) +
     xlab("Permutation importance in %") +
@@ -1904,7 +1907,29 @@ ggplot(tree_vars_imp_mean_TOGETHER, aes(y = names, x = mean), size = 2) +
         axis.text.x = element_text(vjust = -2), 
         axis.title.y = element_text(margin = margin(r = 20)), 
         axis.title.x = element_text(margin = margin(t = 20))
-        )
+        )+
+    scale_y_discrete(limits=rev)
+```
+
+### Save
+
+```{r}
+save.to <- "./4_output/Plots and tables/"
+
+plots <- list(tree_vars_imp_plot_EU, tree_vars_imp_plot_EU_adv, tree_vars_imp_plot_WORLD, tree_vars_imp_plot_WORLD_adv, tree_vars_imp_plot_tog)
+
+plot_names <- c("tree_vars_imp_plot_EU", "tree_vars_imp_plot_EU_adv", "tree_vars_imp_plot_WORLD", "tree_vars_imp_plot_WORLD_adv", "tree_vars_imp_plot_tog")
+
+for (i in 1:5) {
+   ggsave(
+    filename = paste0(save.to, plot_names[[i]],".pdf"),
+    plot = plots[[i]],
+    device = "pdf",
+    width = 12.0,
+    height = 7
+   )
+}
+
 ```
 
 
@@ -2233,8 +2258,12 @@ Ger_arrange <- tmap_arrange(
 Remake of the plots in Mapsf to try different styles
 
 ```{r}
+pdf(
+    file = paste0(save.to, "EU_plot", ".pdf"),
+    width = 12,
+    height = 9
+   )
 
-library(latex2exp)
 mat <- matrix(
     c(  1,1,1,2,
         1,1,1,3,
@@ -2276,10 +2305,8 @@ pax <- list(
     mgp = c(1,-1,0)
 )
 
-inset <- c(-0.035, -0.02, 0, 0)
 inset <- c(0, 0, 0, 0)
 {
-layout.show(6)
 plot(final_res_curr[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
 legend("topleft", legend = "A) Current suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
 
@@ -2300,19 +2327,26 @@ text(1.1, 0.5, "Map: D", srt = 90, xpd = T, cex =2)
 
 
 plot(final_res_curr[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
-legend("topleft", legend = "B) Std. of A", cex = 2, box.lty = 0, bg = NA, inset = inset)
+legend("topleft", legend = "B) Standard deviation\n     of A", cex = 2, box.lty = 0, bg = NA, inset = inset)
 plot(final_res_fut[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
 legend("topleft", legend = "C) Future suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
 plot(final_res_fut[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
-legend("topleft", legend = "D) Std. of C", cex = 2, box.lty = 0, bg = NA, inset = inset)
+legend("topleft", legend = "D) Standard deviation\n     of C", cex = 2, box.lty = 0, bg = NA, inset = inset)
 }
+
+
+dev.off()
 ```
 
 #### Base - Germany
 
 ```{r}
+pdf(
+    file = paste0(save.to, "GERMANY_plot", ".pdf"),
+    width = 12,
+    height = 9
+   )
 
-library(latex2exp)
 mat <- matrix(
     c(  1,1,1,2,
         1,1,1,3,
@@ -2331,7 +2365,7 @@ my_comp_pos <- c("right", "top")
 final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")
 final_res_fut <- rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")
 my_bbox <- ext(final_res_curr)
-my_bbox[4] %<>% multiply_by(1.015)
+my_bbox[4] %<>% multiply_by(1.02)
 
 plot_levels <- final_res_curr[["final"]] %>% 
     levels() %>% 
@@ -2355,13 +2389,11 @@ pax <- list(
     mgp = c(1,-1,0)
 )
 
-inset <- c(-0.035, -0.02, 0, 0)
 inset <- c(0, 0, 0, 0)
 
 {
-layout.show(6)
 plot(final_res_curr[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
-legend("topright", legend = "A) Current suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
+legend("topleft", legend = "A) Current suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
 
 plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main =  TeX("$\\textbf{Suitabiliy\\ categories}$"), cex.main = 2)
 legend("center", legend = plot_levels, fill = my_col, cex = 2, box.lty = 0)
@@ -2380,17 +2412,14 @@ text(1.1, 0.5, "Map: D", srt = 90, xpd = T, cex =2)
 
 
 plot(final_res_curr[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
-legend("topright", legend = "B) Std. of A", cex = 2, box.lty = 0, bg = NA, inset = inset)
+legend("topleft", legend = "B) Standard deviation\n     of A", cex = 2, box.lty = 0, bg = NA, inset = inset)
 plot(final_res_fut[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
-legend("topright", legend = "C) Future suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
+legend("topleft", legend = "C) Future suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
 plot(final_res_fut[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
-legend("topright", legend = "D) Std. of C", cex = 2, box.lty = 0, bg = NA, inset = inset)
+legend("topleft", legend = "D) Standard deviation\n     of C", cex = 2, box.lty = 0, bg = NA, inset = inset)
 }
-```
 
-#### Export
-
-```{r}
+dev.off()
 
 ```
 
@@ -2563,16 +2592,18 @@ tmap_arrange(
 ### Base plot
 
 ```{r}
+pdf(
+    file = paste0(save.to, "Predator_plot", ".pdf"),
+    width = 12.8,
+    height = 8.33
+   )
 
-library(latex2exp)
 mat <- matrix(
-    c(  1,2,4,
-        1,2,3,
-        1,2,3),
-    nrow = 3, 
+    c(  1,2,3,
+        4,4,5),
+    nrow = 2, 
     byrow = T)
-layout(mat, widths = c(1,1,1), heights = c(1,1,1))
-
+layout(mat, widths = c(1,1,1), heights = c(1, 0.2))
 
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
 my_comp_type <- "rose"
@@ -2608,11 +2639,9 @@ pax <- list(
     outer = F
 )
 
-inset <- c(-0.035, -0.02, 0, 0)
 inset <- c(0, 0, 0, 0)
 
 {
-layout.show(4)
 plot(wolf_overlap, ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
 legend("topleft", legend = "A) Wolf Overlap", cex = 2, box.lty = 0, bg = NA, inset = inset)
 
@@ -2623,16 +2652,16 @@ plot(fox_density, breaks = fox_breaks, ext = my_bbox, col = colorRampPalette(my_
 legend("topleft", legend = "C) Fox density", cex = 2, box.lty = 0, bg = NA, inset = inset)
 
 plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main =  TeX("$\\textbf{Suitabiliy\\ categories}$"), cex.main = 2)
-legend("top", legend = plot_levels, fill = my_col, cex = 2, box.lty = 0)
+legend("center", legend = plot_levels, fill = my_col, cex = 2, box.lty = 0)
 
+plot(c(0,1),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main =  TeX("$\\textbf{Fox\\ density}$"), cex.main = 2)
 
 legend_image <- as.raster(matrix(my_col, nrow=1))
-text(x=seq(0.1,1.8,l=4), y = 0, labels = seq(minmax_curr[1],minmax_curr[2],l=4) %>% round(2), cex = 2, xpd = T)
-rasterImage(legend_image, 0, 0.2, 2,0.1)
-
-text(1, 0.3, TeX("$\\textbf{Fox\\ density}$"), srt = 0, xpd = T, cex =2)
+text(x=seq(0.1,0.9,l=4), y = 0.3, labels = seq(minmax_curr[1],minmax_curr[2],l=4) %>% round(0), cex = 2, xpd = T)
+rasterImage(legend_image, 0, 0.5, 1,0.8)
 }
 
+dev.off()
 ```
 
 
@@ -2933,8 +2962,15 @@ AOI %<>% add_column(point_aoi_inter)
 tm_shape(AOI) +
     tm_fill(col = "point_aoi_inter", palette = "Greens", style = "log10", title = "Occurrences \nper Country") +
     tm_borders(col = "black") +
-    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos) +
+    #tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos) +
     tm_layout(legend.position = c("left", "top"), legend.text.size = 1.7, legend.title.size = 1.7)
+
+
+mapsf::mf_map(AOI, var = "point_aoi_inter", type = "choro", pal = colorRampPalette(my_col)(8), breaks = "q6")
+
+plot(AOI["point_aoi_inter"], nbreaks = 5, breaks = "quantile", pal = colorRampPalette(my_col)(5), reset = F)
+
+
 ```
 
 
