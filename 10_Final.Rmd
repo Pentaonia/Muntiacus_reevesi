@@ -48,6 +48,7 @@ library(ggbreak)
 library(ggstatsplot)
 library(spatstat)
 library(gridExtra)
+library(xtable)
 ```
 
 ## Seed
@@ -1365,19 +1366,19 @@ Output:
 
 ```{r}
 # Settings for the test runs:
-cv.runs <- 5
-iter_own <- 40
-warmup_own <- 20
-chains_own <- 2
-trees_own <- 50
+# cv.runs <- 25
+# iter_own <- 40
+# warmup_own <- 20
+# chains_own <- 2
+# trees_own <- 50
 
 
 # Settings for the final run:
-# cv.runs <- 25
-# iter_own <- 500
-# warmup_own <- 150
-# chains_own <- 3
-# trees_own <- 200
+cv.runs <- 25
+iter_own <- 500
+warmup_own <- 150
+chains_own <- 3
+trees_own <- 200
 
 ### In the following:
 ## Comment or uncomment the necessary parts for predicting AOI or WORLD data sets to high/low resolution EU or the FUTURE data set.
@@ -1385,20 +1386,20 @@ trees_own <- 50
 
 # ################ 1
 # Predict from AOI to low EU
-load("./3_ready/model input/PA_AOI.Rdata")
-path_to_store <- "./4_output/1.EU_high_res_CV_PRED_low_res/"
-prediction_to_what <- rast("./3_ready/EU_environment_low.tif")
-data_map_df <- read.table("./3_ready/model input/EU_environment_low_rast_na-free.txt")
-data_map_df_comp <- read.table("./3_ready/model input/EU_environment_low_rast_comp_cases.txt")
+# load("./3_ready/model input/PA_AOI.Rdata")
+# path_to_store <- "./4_output/1.EU_high_res_CV_PRED_low_res/"
+# prediction_to_what <- rast("./3_ready/EU_environment_low.tif")
+# data_map_df <- read.table("./3_ready/model input/EU_environment_low_rast_na-free.txt")
+# data_map_df_comp <- read.table("./3_ready/model input/EU_environment_low_rast_comp_cases.txt")
 
 
 # ################ 2
 # Predict from AOI to high EU
-# load("./3_ready/model input/PA_AOI.Rdata")
-# path_to_store <- "./4_output/2.EU_high_res_CV_PRED_high_res/"
-# prediction_to_what <- rast("./3_ready/EU_environment.tif")
-# data_map_df <- read.table("./3_ready/model input/EU_environment_rast_na-free.txt")
-# data_map_df_comp <- read.table("./3_ready/model input/EU_environment_rast_comp_cases.txt")
+load("./3_ready/model input/PA_AOI.Rdata")
+path_to_store <- "./4_output/2.EU_high_res_CV_PRED_high_res/"
+prediction_to_what <- rast("./3_ready/EU_environment.tif")
+data_map_df <- read.table("./3_ready/model input/EU_environment_rast_na-free.txt")
+data_map_df_comp <- read.table("./3_ready/model input/EU_environment_rast_comp_cases.txt")
 
 # ################ 3
 # Predict from WORLD to low EU
@@ -1576,7 +1577,7 @@ for (i in 1:cv.runs) {
 
     convergence[[i]] <- model.stan.cv[[i]]$stan[6, , ] # internal convergence test
 
-    # prediction if model is accepted
+    prediction if model is accepted
     if (acceptance[[i]]) {
         print(paste("Model", i, "accepted!"))
         prediction.count.cv <- prediction.count.cv + 1
@@ -1684,17 +1685,37 @@ model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pa
 Plots for checking each prediction subset
 
 ```{r}
+
+for (i in seq(1,length(tree_vars_imp), 1)) {
+   rownames(tree_vars_imp[[i]]) <- c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope")
+}
+
+
 tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
     apply(1:2, mean) %>%
     as_tibble() %>%
-    mutate(mean = V1, sd = V2)
+    mutate(
+        names = c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope"),
+        mean = V1*100, 
+        sd = V2*100) %>% 
+    select(names, mean, sd)
+
+
+
 
 # Mean Importance in percent over all chains and iterations
-ggplot(tree_vars_imp_mean * 100, aes(y = rownames(tree_vars_imp[[1]]), x = mean)) +
-    geom_point() +
-    geom_pointrange(aes(xmin = mean - sd, xmax = mean + sd)) +
-    xlab("Permutation importance (percentage in which the predictor is responsible for a new branch) + mean SD across the chains and CV-runs") +
-    ylab("Predictors in BART component")
+ggplot(tree_vars_imp_mean, aes(y = names, x = mean), size = 2) +
+    geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
+    geom_point(col = "black", size = 3) +
+    xlab("Permutation importance in %") +
+    ylab("Predictors in BART component") +
+    theme_bw() +
+    theme(
+        text=element_text(size=20), 
+        axis.text.x = element_text(vjust = -2), 
+        axis.title.y = element_text(margin = margin(r = 20)), 
+        axis.title.x = element_text(margin = margin(t = 20))
+        )
 
 
 # Convert matrix to data frame for use in ggplot2
@@ -1707,37 +1728,172 @@ my_dataframe <- reshape2::melt(tree_vars_imp, level = 2) %>% mutate(name = rep(r
 # Line = Exact variable importance per iteration
 ggplot(my_dataframe %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
     geom_line(aes(col = name)) +
-    geom_boxplot(aes(col = name), fill = NA)
+    geom_boxplot(aes(col = name), fill = NA) + 
+        xlab("CV run") +
+    ylab("Permutation importance in %") +
+    theme_bw() +
+    theme(
+        text=element_text(size=20), 
+        axis.text.x = element_text(vjust = -2), 
+        axis.title.y = element_text(margin = margin(r = 20)), 
+        axis.title.x = element_text(margin = margin(t = 20))
+        )  + 
+    labs(color="Predictors in \nBART component")
+
 ```
 
-Final variable importance plot
+## Final variable importance plot
+### Europe
+```{r}
+
+# ################ 2
+# Predict from AOI to high EU
+path_to_store <- "./4_output/2.EU_high_res_CV_PRED_high_res/"
+load(paste0(path_to_store, "test_stat.RData"))
+
+for (i in seq(1,length(tree_vars_imp), 1)) {
+   rownames(tree_vars_imp[[i]]) <- c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope")
+}
+
+tree_vars_imp_EU <- tree_vars_imp
+
+tree_vars_imp_mean_EU <- array(unlist(tree_vars_imp_EU), dim = c(nrow(tree_vars_imp_EU[[1]]), 2, length(tree_vars_imp_EU))) %>%
+    apply(1:2, mean) %>%
+    as_tibble() %>%
+    mutate(
+        names = c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope"),
+        mean = V1*100, 
+        sd = V2*100) %>% 
+    select(names, mean, sd)
+
+
+# Mean Importance in percent over all chains and iterations
+ggplot(tree_vars_imp_mean_EU, aes(y = names, x = mean), size = 2) +
+    geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
+    geom_point(col = "black", size = 3) +
+    xlab("Permutation importance in %") +
+    ylab("Predictors in BART component") +
+    theme_bw() +
+    theme(
+        text=element_text(size=20), 
+        axis.text.x = element_text(vjust = -2), 
+        axis.title.y = element_text(margin = margin(r = 20)), 
+        axis.title.x = element_text(margin = margin(t = 20))
+        )
+
+# Convert matrix to data frame for use in ggplot2
+my_dataframe_EU <- reshape2::melt(tree_vars_imp_EU, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp_EU[[1]]), max(L2) * 2))
+
+# Advanced plot
+# X-Axis = Iterations
+# Y-Axis = Variable importance
+# Boxplot = Importance of that variable over the CV-runs
+# Line = Exact variable importance per iteration
+ggplot(my_dataframe_EU %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
+    geom_line(aes(col = name)) +
+    geom_boxplot(aes(col = name), fill = NA) + 
+        xlab("CV run") +
+    ylab("Permutation importance in %") +
+    theme_bw() +
+    theme(
+        text=element_text(size=20), 
+        axis.text.x = element_text(vjust = -2), 
+        axis.title.y = element_text(margin = margin(r = 20)), 
+        axis.title.x = element_text(margin = margin(t = 20))
+        )  + 
+    labs(color="Predictors in \nBART component")
+
+
+```
+
+### World
 
 ```{r}
-tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
+# ################ 4
+# Predict from WORLD to high EU
+path_to_store <- "./4_output/4.WORLD_high_res_CV_PRED_high_res/"
+load(paste0(path_to_store, "test_stat.RData"))
+
+for (i in seq(1,length(tree_vars_imp), 1)) {
+   rownames(tree_vars_imp[[i]]) <- c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope")
+}
+
+tree_vars_imp_WORLD <- tree_vars_imp
+tree_vars_imp_mean_WORLD <- array(unlist(tree_vars_imp_WORLD), dim = c(nrow(tree_vars_imp_WORLD[[1]]), 2, length(tree_vars_imp_WORLD))) %>%
     apply(1:2, mean) %>%
     as_tibble() %>%
-    mutate(mean = V1, sd = V2)
+    mutate(
+        names = c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope"),
+        mean = V1*100, 
+        sd = V2*100) %>% 
+    select(names, mean, sd)
 
-# Mean Importance in percent over all chains and iterations
-ggplot(tree_vars_imp_mean * 100, aes(y = rownames(tree_vars_imp[[1]]), x = mean)) +
-    geom_point() +
-    geom_pointrange(aes(xmin = mean - sd, xmax = mean + sd)) +
-    xlab("Permutation importance (percentage in which the predictor is responsible for a new branch) + mean SD across the chains and CV-runs") +
-    ylab("Predictors in BART component")
+
+ggplot(tree_vars_imp_mean_WORLD, aes(y = names, x = mean), size = 2) +
+    geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
+    geom_point(col = "black", size = 3) +
+    xlab("Permutation importance in %") +
+    ylab("Predictors in BART component") +
+    theme_bw() +
+    theme(
+        text=element_text(size=20), 
+        axis.text.x = element_text(vjust = -2), 
+        axis.title.y = element_text(margin = margin(r = 20)), 
+        axis.title.x = element_text(margin = margin(t = 20))
+        )
+
 
 
 # Convert matrix to data frame for use in ggplot2
-my_dataframe <- reshape2::melt(tree_vars_imp, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp[[1]]), max(L2) * 2))
+my_dataframe_WORLD <- reshape2::melt(tree_vars_imp_WORLD, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp_WORLD[[1]]), max(L2) * 2))
 
 # Advanced plot
 # X-Axis = Iterations
 # Y-Axis = Variable importance
 # Boxplot = Importance of that variable over the CV-runs
 # Line = Exact variable importance per iteration
-ggplot(my_dataframe %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
+ggplot(my_dataframe_WORLD %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
     geom_line(aes(col = name)) +
-    geom_boxplot(aes(col = name), fill = NA)
+    geom_boxplot(aes(col = name), fill = NA) + 
+        xlab("CV run") +
+    ylab("Permutation importance in %") +
+    theme_bw() +
+    theme(
+        text=element_text(size=20), 
+        axis.text.x = element_text(vjust = -2), 
+        axis.title.y = element_text(margin = margin(r = 20)), 
+        axis.title.x = element_text(margin = margin(t = 20))
+        )  + 
+    labs(color="Predictors in \nBART component")
+
 ```
+
+### Mean of both
+
+```{r}
+
+tree_vars_imp_mean_TOGETHER <- tibble(
+    names = tree_vars_imp_mean_EU$names,
+    mean = rowMeans(cbind(tree_vars_imp_mean_EU$mean, tree_vars_imp_mean_WORLD$mean)),
+    sd = rowMeans(cbind(tree_vars_imp_mean_EU$sd, tree_vars_imp_mean_WORLD$sd))
+    )
+
+
+ggplot(tree_vars_imp_mean_TOGETHER, aes(y = names, x = mean), size = 2) +
+    geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
+    geom_point(col = "black", size = 3) +
+    xlab("Permutation importance in %") +
+    ylab("Predictors in BART component") +
+    theme_bw() +
+    theme(
+        text=element_text(size=20), 
+        axis.text.x = element_text(vjust = -2), 
+        axis.title.y = element_text(margin = margin(r = 20)), 
+        axis.title.x = element_text(margin = margin(t = 20))
+        )
+```
+
+
 
 ## Test statistics
 ```{r}
@@ -1751,6 +1907,56 @@ acceptance
 accurr
 convergence
 bri
+```
+
+### Appendix table for Test statistics
+
+#### Europe
+
+```{r}
+path_to_store <- "./4_output/2.EU_high_res_CV_PRED_high_res/"
+load(paste0(path_to_store, "test_stat.RData"))
+convergence_new <- lapply(convergence, 1, FUN = mean) %>% unlist()
+
+test_stat <- cbind(
+    AUC = auc.cv,
+    Accuracy = accurr,
+    TSS = tss,
+    "TSS Thresh" = tss.thresh,
+    Accepted = as.integer(as.logical(acceptance)),
+    Divergent = convergence_new,
+    BRI = bri
+) %>% apply(., 2, as.numeric) %>% 
+    rbind(.,colMeans(.)) # last column is mean
+
+xtable(test_stat,
+    caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy = 92.5 %, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+    ) %>% 
+print(file = "./4_output/Result/EU_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
+```
+
+#### World
+
+```{r}
+path_to_store <- "./4_output/4.WORLD_high_res_CV_PRED_high_res/"
+load(paste0(path_to_store, "test_stat.RData"))
+convergence_new <- lapply(convergence, 1, FUN = mean) %>% unlist()
+
+test_stat <- cbind(
+    AUC = auc.cv,
+    "TSS Thresh" = tss.thresh,
+    TSS = tss,
+    Accepted = as.integer(as.logical(acceptance)),
+    Accuracy = accurr,
+    Divergent = convergence_new,
+    BRI = bri
+) %>% apply(., 2, as.numeric) %>% 
+    rbind(.,colMeans(.)) # last column is mean
+
+xtable(test_stat,
+    caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy = 92.5 %, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+    ) %>% 
+print(file = "./4_output/Result/WORLD_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
 ```
 
 ## Result map stacks
