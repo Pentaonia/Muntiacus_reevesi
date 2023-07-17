@@ -1313,7 +1313,21 @@ col_result <- col_test_df %>%
     select(bio_1, bio_12, trees, water_distance, slope) %>%
     multicol_own()
 
-owncount(col_result, "VIF", 10, "max")
+owncount(col_result, "VIF", 10, "max") %>%
+    mutate(Predictor = case_when(
+        factor == "bio_1" ~ "Mean temp.",
+        factor == "bio_12" ~ "Mean prec.",
+        factor == "slope" ~ "Slope",
+        factor == "trees" ~ "Trees",
+        factor == "water_distance" ~ "Water distance",
+        .default = factor
+    )) %>%
+    select(Predictor, Rsquared, VIF, count) %>% 
+    xtable(.,
+    caption = "Collinearity statistics of the used predictors. VIF = 1/R² = Variance inflation factor."
+) %>%
+    print(file = "./4_output/Plots and tables/Collinearity.txt", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
+
 ```
 
 Remaining variables: 
@@ -1911,7 +1925,7 @@ bri
 
 ### Appendix table for Test statistics
 
-#### Europe
+#### Europe - Appendix
 
 ```{r}
 path_to_store <- "./4_output/2.EU_high_res_CV_PRED_high_res/"
@@ -1930,34 +1944,54 @@ test_stat <- cbind(
     rbind(.,colMeans(.)) # last column is mean
 
 xtable(test_stat,
-    caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy = 92.5 %, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+    caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
     ) %>% 
-print(file = "./4_output/Result/EU_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
+print(file = "./4_output/Plots and tables/EU_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
 ```
 
-#### World
+#### World - Appendix
 
 ```{r}
 path_to_store <- "./4_output/4.WORLD_high_res_CV_PRED_high_res/"
 load(paste0(path_to_store, "test_stat.RData"))
 convergence_new <- lapply(convergence, 1, FUN = mean) %>% unlist()
 
-test_stat <- cbind(
+test_stat2 <- cbind(
     AUC = auc.cv,
-    "TSS Thresh" = tss.thresh,
-    TSS = tss,
-    Accepted = as.integer(as.logical(acceptance)),
     Accuracy = accurr,
+    TSS = tss,
+    "TSS Thresh" = tss.thresh,
+    Accepted = as.integer(as.logical(acceptance)),
     Divergent = convergence_new,
     BRI = bri
 ) %>% apply(., 2, as.numeric) %>% 
     rbind(.,colMeans(.)) # last column is mean
 
-xtable(test_stat,
-    caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy = 92.5 %, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+xtable(test_stat2,
+    caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
     ) %>% 
-print(file = "./4_output/Result/WORLD_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
+print(file = "./4_output/Plots and tables/WORLD_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
 ```
+
+#### Summary - results
+
+```{r}
+
+test_stat3 <- c(0.9, 0.9, 0.9, NA, 1,0, 0.05) %>% 
+    rbind(test_stat[26,]) %>% 
+    rbind(test_stat2[26,])
+
+rownames(test_stat3) <- c("Min. Thresh", "Europe", "World")
+
+
+xtable(test_stat3,
+    caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+    ) %>% 
+print(file = "./4_output/Plots and tables/MEAN_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
+
+
+```
+
 
 ## Result map stacks
 ### Directory
@@ -2079,7 +2113,7 @@ rast("./4_output/Result/FUTURE_Final_map.tif") %>%
     mask(AOI[AOI$Name == "DEU", ], filename = "./4_output/Result/FUTURE_Final_map_GERMANY.tif", overwrite = TRUE)
 ```
 
-### Plots
+### Plots .{tabset}
 ```{r}
 AOI <- st_read("./3_ready/AOI_border.shp")
 
@@ -2097,10 +2131,12 @@ DE_districts <- st_read("./1_input/German_States/vg2500_12-31.tm32.shape/vg2500/
     st_transform(st_crs(AOI))
 ```
 
+#### Tmap plots
+
 EU-wide and Germany-wide plots of the suitability for today, future prediction, and the standard deviations between all model runs
 
 ```{r}
-dir.create("./4_output/Plots")
+dir.create("./4_output/Plots and tables")
 
 # Europe
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
@@ -2191,6 +2227,171 @@ Ger_arrange <- tmap_arrange(
     fut_std,
     nrow = 1
 )
+```
+
+#### Base - Europe
+Remake of the plots in Mapsf to try different styles
+
+```{r}
+
+library(latex2exp)
+mat <- matrix(
+    c(  1,1,1,2,
+        1,1,1,3,
+        4,5,5,6),
+    nrow = 3, 
+    byrow = T)
+layout(mat, widths = c(0.25,0.25,0.25,0.25), heights = c(1,1,1.4))
+
+
+my_col <- c("#ffffff", "#99d8c9", "#1e854b")
+my_comp_type <- "rose"
+my_comp_lable <- 3
+my_comp_size <- 5
+my_comp_pos <- c("right", "top")
+
+final_res_curr <- rast("./4_output/Result/TODAY_Final_map.tif")
+final_res_fut <- rast("./4_output/Result/FUTURE_Final_map.tif")
+my_bbox <- matrix(c(-1275875, 4470206, 3696405, 7957273), byrow = F, nrow = 2) %>% bbox() %>% extent()
+
+plot_levels <- final_res_curr[["final"]] %>% 
+    levels() %>% 
+    .[[1]] %>% 
+    .[,2]
+minmax_curr <- final_res_curr[["std"]] %>% 
+    terra::minmax() %>% 
+    as.vector()
+
+minmax_fut <- final_res_fut[["std"]] %>% 
+    terra::minmax() %>% 
+    as.vector()
+par(mai=c(5,1,0,0), bg="white")
+mar <- c(0.5, 1, 2, 0.5)
+pax <- list(
+    side = c(1,2,3,4),
+    tick = F,
+    labels = F,
+    cex.axis = 2,
+    outer = F,
+    mgp = c(1,-1,0)
+)
+
+inset <- c(-0.035, -0.02, 0, 0)
+inset <- c(0, 0, 0, 0)
+{
+layout.show(6)
+plot(final_res_curr[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
+legend("topleft", legend = "A) Current suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
+
+plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main =  TeX("$\\textbf{Suitabiliy\\ categories}$"), cex.main = 2)
+legend("center", legend = plot_levels, fill = my_col, cex = 2, box.lty = 0)
+
+
+legend_image <- as.raster(matrix(rev(my_col), ncol=1))
+plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = TeX("$\\textbf{Standard\\ deviation}$"), cex.main = 2)
+text(x=0.5, y = seq(0.1,0.85,l=4), labels = seq(minmax_curr[1],minmax_curr[2],l=4) %>% round(2), cex = 2)
+rasterImage(legend_image, 0, 0, 0.2,1)
+
+text(x=1.7, y = seq(0.1,0.85,l=4), labels = seq(minmax_fut[1],minmax_fut[2],l=4) %>% round(2), cex = 2)
+rasterImage(legend_image, 1.2, 0, 1.4,1)
+
+text(-0.1, 0.5, "Map: B", srt = 90, xpd = T, cex =2)
+text(1.1, 0.5, "Map: D", srt = 90, xpd = T, cex =2)
+
+
+plot(final_res_curr[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
+legend("topleft", legend = "B) Std. of A", cex = 2, box.lty = 0, bg = NA, inset = inset)
+plot(final_res_fut[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
+legend("topleft", legend = "C) Future suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
+plot(final_res_fut[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(AOI$geometry, add = T)
+legend("topleft", legend = "D) Std. of C", cex = 2, box.lty = 0, bg = NA, inset = inset)
+}
+```
+
+#### Base - Germany
+
+```{r}
+
+library(latex2exp)
+mat <- matrix(
+    c(  1,1,1,2,
+        1,1,1,3,
+        4,5,5,6),
+    nrow = 3, 
+    byrow = T)
+layout(mat, widths = c(0.25,0.25,0.25,0.25), heights = c(1,1,1.4))
+
+
+my_col <- c("#ffffff", "#99d8c9", "#1e854b")
+my_comp_type <- "rose"
+my_comp_lable <- 3
+my_comp_size <- 5
+my_comp_pos <- c("right", "top")
+
+final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")
+final_res_fut <- rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")
+my_bbox <- ext(final_res_curr)
+my_bbox[4] %<>% multiply_by(1.015)
+
+plot_levels <- final_res_curr[["final"]] %>% 
+    levels() %>% 
+    .[[1]] %>% 
+    .[,2]
+minmax_curr <- final_res_curr[["std"]] %>% 
+    terra::minmax() %>% 
+    as.vector()
+
+minmax_fut <- final_res_fut[["std"]] %>% 
+    terra::minmax() %>% 
+    as.vector()
+par(mai=c(5,1,0,0), bg="white")
+mar <- c(0.5, 1, 2, 0.5)
+pax <- list(
+    side = c(1,2,3,4),
+    tick = F,
+    labels = F,
+    cex.axis = 2,
+    outer = F,
+    mgp = c(1,-1,0)
+)
+
+inset <- c(-0.035, -0.02, 0, 0)
+inset <- c(0, 0, 0, 0)
+
+{
+layout.show(6)
+plot(final_res_curr[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
+legend("topright", legend = "A) Current suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
+
+plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main =  TeX("$\\textbf{Suitabiliy\\ categories}$"), cex.main = 2)
+legend("center", legend = plot_levels, fill = my_col, cex = 2, box.lty = 0)
+
+
+legend_image <- as.raster(matrix(rev(my_col), ncol=1))
+plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = TeX("$\\textbf{Standard\\ deviation}$"), cex.main = 2)
+text(x=0.5, y = seq(0.1,0.85,l=4), labels = seq(minmax_curr[1],minmax_curr[2],l=4) %>% round(2), cex = 2)
+rasterImage(legend_image, 0, 0, 0.2,1)
+
+text(x=1.7, y = seq(0.1,0.85,l=4), labels = seq(minmax_fut[1],minmax_fut[2],l=4) %>% round(2), cex = 2)
+rasterImage(legend_image, 1.2, 0, 1.4,1)
+
+text(-0.1, 0.5, "Map: B", srt = 90, xpd = T, cex =2)
+text(1.1, 0.5, "Map: D", srt = 90, xpd = T, cex =2)
+
+
+plot(final_res_curr[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
+legend("topright", legend = "B) Std. of A", cex = 2, box.lty = 0, bg = NA, inset = inset)
+plot(final_res_fut[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
+legend("topright", legend = "C) Future suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
+plot(final_res_fut[["std"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
+legend("topright", legend = "D) Std. of C", cex = 2, box.lty = 0, bg = NA, inset = inset)
+}
+```
+
+#### Export
+
+```{r}
+
 ```
 
 
@@ -2359,6 +2560,83 @@ tmap_arrange(
 )
 ```
 
+### Base plot
+
+```{r}
+
+library(latex2exp)
+mat <- matrix(
+    c(  1,2,4,
+        1,2,3,
+        1,2,3),
+    nrow = 3, 
+    byrow = T)
+layout(mat, widths = c(1,1,1), heights = c(1,1,1))
+
+
+my_col <- c("#ffffff", "#99d8c9", "#1e854b")
+my_comp_type <- "rose"
+my_comp_lable <- 3
+my_comp_size <- 5
+my_comp_pos <- c("right", "top")
+
+wolf_overlap <- rast("./4_output/Predators/wolf_overlap.tif")
+lynx_overlap <- rast("./4_output/Predators/lynx_overlap.tif")
+fox_density <- rast("./4_output/Predators/Fox_density.tif")
+fox_breaks <- c(0, 25, 50, 100, 200, 400, 800, Inf)
+my_bbox <- ext(wolf_overlap)
+my_bbox[4] %<>% multiply_by(1.015)
+
+plot_levels <- wolf_overlap%>% 
+    levels() %>% 
+    .[[1]] %>% 
+    .[,2]
+minmax_curr <- fox_density%>% 
+    terra::minmax() %>% 
+    as.vector()
+
+minmax_fut <- fox_density %>% 
+    terra::minmax() %>% 
+    as.vector()
+par(mai=c(5,1,0,0), bg="white")
+mar <- c(0.5, 1, 2, 0.5)
+pax <- list(
+    side = c(1,2,3,4),
+    tick = F,
+    labels = F,
+    cex.axis = 2,
+    outer = F
+)
+
+inset <- c(-0.035, -0.02, 0, 0)
+inset <- c(0, 0, 0, 0)
+
+{
+layout.show(4)
+plot(wolf_overlap, ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
+legend("topleft", legend = "A) Wolf Overlap", cex = 2, box.lty = 0, bg = NA, inset = inset)
+
+plot(lynx_overlap, ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
+legend("topleft", legend = "B) Lynx Overlap", cex = 2, box.lty = 0, bg = NA, inset = inset)
+
+plot(fox_density, breaks = fox_breaks, ext = my_bbox, col = colorRampPalette(my_col)(length(fox_breaks)), legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
+legend("topleft", legend = "C) Fox density", cex = 2, box.lty = 0, bg = NA, inset = inset)
+
+plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main =  TeX("$\\textbf{Suitabiliy\\ categories}$"), cex.main = 2)
+legend("top", legend = plot_levels, fill = my_col, cex = 2, box.lty = 0)
+
+
+legend_image <- as.raster(matrix(my_col, nrow=1))
+text(x=seq(0.1,1.8,l=4), y = 0, labels = seq(minmax_curr[1],minmax_curr[2],l=4) %>% round(2), cex = 2, xpd = T)
+rasterImage(legend_image, 0, 0.2, 2,0.1)
+
+text(1, 0.3, TeX("$\\textbf{Fox\\ density}$"), srt = 0, xpd = T, cex =2)
+}
+
+```
+
+
+
 # Area calculations {.tabset}
 ## Europe
 ```{r}
@@ -2428,6 +2706,28 @@ truesize <- terra::cellSize(same_class, unit = "km")
 same_class_area <- terra::zonal(truesize, same_class, fun = "sum") %>%
     mutate(proportion = area / sum(area))
 ```
+
+## Table
+
+```{r}
+
+area_table <- GER_curr_area[,c(1,3)]  %>% 
+    rename("Class" = final, "Germany current" = proportion) %>% 
+    mutate(
+        "Germany future" = GER_fut_area[,c(3)],
+        "Europe current" = EU_curr_area[,3],
+        "Europe future" = EU_fut_area[,3]
+        )
+
+area_table[,-1]  %<>% multiply_by(100)
+
+xtable(area_table,
+    caption = "Todays and future suitability area per class in percent for Germany and Europe."
+) %>%
+    print(file = "./4_output/Plots and tables/suitable areas.txt", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
+
+```
+
 
 ## Predators
 ```{r}
