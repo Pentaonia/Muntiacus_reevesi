@@ -281,10 +281,10 @@ multicol_own <- function(vars = NULL, model = NULL, reorder = TRUE) {
         )))
         mod <- lm(mod.formula, data = vars)
         R2 <- summary(mod)$r.squared
-        result[v, "Rsquared"] <- R2
+        result[v, "R²"] <- R2
         result[v, "Tolerance"] <- 1 - R2
         result[v, "VIF"] <- 1 / (1 - R2)
-        result[v, "count"] <- (summary(mod)$coefficients[, 4] < 0.05) %>%
+        result[v, "Count"] <- (summary(mod)$coefficients[, 4] < 0.05) %>%
             table() %>%
             .["TRUE"]
         result[v, "significant_vars"] <- enframe(list(names(summary(mod)$coefficients[, 4])[summary(mod)$coefficients[, 4] < 0.05][order(summary(mod)$coefficients[, 1][summary(mod)$coefficients[, 4] < 0.05])]))[2]
@@ -1323,11 +1323,11 @@ owncount(col_result, "VIF", 10, "max") %>%
         factor == "water_distance" ~ "Water distance",
         .default = factor
     )) %>%
-    select(Predictor, Rsquared, VIF, count) %>% 
+    select(Predictor, "R²", VIF, Count) %>% 
     xtable(.,
-    caption = "Collinearity statistics of the used predictors. VIF = 1/R² = Variance inflation factor."
+    caption = "Collinearity statistics of the used predictors. VIF = $\\frac{1}{R²}$ = Variance inflation factor. Sorted after VIF. Mean prec. = Annual mean precipitation, Mean temp. = Annual mean temperature, Count = Count of significant corellated variables + Intercept"
 ) %>%
-    print(file = "./4_output/Plots and tables/Collinearity.txt", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
+    print(file = "./4_output/Plots and tables/Collinearity.tex", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
 
 ```
 
@@ -1965,13 +1965,12 @@ test_stat <- cbind(
     Accepted = as.integer(as.logical(acceptance)),
     Divergent = convergence_new,
     BRI = bri
-) %>% apply(., 2, as.numeric) %>% 
-    rbind(.,colMeans(.)) # last column is mean
+) %>% apply(., 2, as.numeric) 
 
 xtable(test_stat,
     caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
     ) %>% 
-print(file = "./4_output/Plots and tables/EU_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
+print(file = "./4_output/Plots and tables/EU_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
 ```
 
 #### World - Appendix
@@ -1989,30 +1988,44 @@ test_stat2 <- cbind(
     Accepted = as.integer(as.logical(acceptance)),
     Divergent = convergence_new,
     BRI = bri
-) %>% apply(., 2, as.numeric) %>% 
-    rbind(.,colMeans(.)) # last column is mean
+) %>% apply(., 2, as.numeric) 
 
 xtable(test_stat2,
     caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
     ) %>% 
-print(file = "./4_output/Plots and tables/WORLD_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
+print(file = "./4_output/Plots and tables/WORLD_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
 ```
 
 #### Summary - results
 
 ```{r}
 
-test_stat3 <- c(0.9, 0.9, 0.9, NA, 1,0, 0.05) %>% 
-    rbind(test_stat[26,]) %>% 
-    rbind(test_stat2[26,])
+test_stat3 <- c(test_stat %>% colMeans(), test_stat2 %>% colMeans()) %>% round(2)
+test_stat3_sd <- c(test_stat %>% apply(., 2,sd), test_stat2 %>% apply(., 2,sd)) %>% round(5)
 
-rownames(test_stat3) <- c("Min. Thresh", "Europe", "World")
+test_stat4 <- vector()
+
+for (i in 1:14) {
+   test_stat4[i] <- paste0(test_stat3[i], " ± ", test_stat3_sd[i])
+}
 
 
-xtable(test_stat3,
+test_stat5 <- c(0.9, 0.9, 0.9, NA, 1,0, 0.05,test_stat4) %>% matrix(nrow = 3, byrow = T)
+
+rownames(test_stat5) <- c("Min. Thresh", "Europe", "World")
+colnames(test_stat5) <- colnames(test_stat2)
+
+test_stat5 %<>% t()
+
+
+
+
+
+
+xtable(test_stat5,
     caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
     ) %>% 
-print(file = "./4_output/Plots and tables/MEAN_Test_Statistics.txt", caption.placement = getOption("xtable.caption.placement", "top"))
+print(file = "./4_output/Plots and tables/MEAN_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
 
 
 ```
@@ -2156,106 +2169,9 @@ DE_districts <- st_read("./1_input/German_States/vg2500_12-31.tm32.shape/vg2500/
     st_transform(st_crs(AOI))
 ```
 
-#### Tmap plots
+#### Base - Europe
 
 EU-wide and Germany-wide plots of the suitability for today, future prediction, and the standard deviations between all model runs
-
-```{r}
-dir.create("./4_output/Plots and tables")
-
-# Europe
-my_col <- c("#ffffff", "#99d8c9", "#1e854b")
-my_comp_type <- "rose"
-my_comp_lable <- 3
-my_comp_size <- 5
-my_comp_pos <- c("right", "top")
-
-final_res_curr <- rast("./4_output/Result/TODAY_Final_map.tif")
-final_res_fut <- rast("./4_output/Result/FUTURE_Final_map.tif")
-my_bbox <- matrix(c(-1275875, 4470206, 3696405, 7907273), byrow = F, nrow = 2) %>% bbox()
-
-curr_fin <- tm_shape(final_res_curr[["final"]], bbox = my_bbox) + tm_raster(palette = my_col, title = "A) Current suitability") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2)
-
-fut_fin <- tm_shape(final_res_fut[["final"]], bbox = my_bbox) + tm_raster(palette = my_col, title = "B) Future suitability") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2)
-
-curr_std <- tm_shape(final_res_curr[["std"]], bbox = my_bbox) + tm_raster(style = "cont", palette = my_col, title = "C) Current prediction \nstandard deviation") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2)
-
-fut_std <- tm_shape(final_res_fut[["std"]], bbox = my_bbox) + tm_raster(style = "cont", palette = my_col, title = "D) Future prediction \nstandard deviation") +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
-
-tmap_arrange(
-    curr_fin,
-    fut_fin,
-    curr_std,
-    fut_std,
-    nrow = 2
-)
-
-
-# Germany
-final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")
-final_res_fut <- rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")
-
-curr_fin <- tm_shape(final_res_curr[["final"]]) + tm_raster(palette = my_col, title = "A) Current suitability") +
-    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2)
-
-fut_fin <- tm_shape(final_res_fut[["final"]]) + tm_raster(palette = my_col, title = "B) Future suitability") +
-    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2)
-
-curr_std <- tm_shape(final_res_curr[["std"]]) + tm_raster(style = "cont", palette = my_col, title = "C) Current prediction \nstandard deviation") +
-    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2)
-
-fut_std <- tm_shape(final_res_fut[["std"]]) + tm_raster(style = "cont", palette = my_col, title = "D) Future prediction \nstandard deviation") +
-    # tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
-    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
-
-fut_fin_leg <- fut_fin + tm_layout(legend.only = T)
-
-curr_std_leg <- curr_std + tm_layout(legend.only = T)
-
-
-
-
-
-library(grid)
-
-grid.newpage()
-pushViewport(viewport(layout = grid.layout(nrow = 3, ncol = 3)))
-
-print(
-    curr_std + tm_layout(legend.only = T),
-    vp = viewport(layout.pos.row = 1, layout.pos.col = 1)
-)
-
-print(
-    fut_fin + tm_layout(legend.only = T),
-    vp = viewport(layout.pos.row = 2, layout.pos.col = 1)
-)
-
-print(tmap_grob(curr_fin), vp = viewport(layout.pos.row = 1:2, layout.pos.col = 2:3))
-print(curr_std, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
-print(fut_fin, vp = viewport(layout.pos.row = 3, layout.pos.col = 2))
-print(fut_std, vp = viewport(layout.pos.row = 3, layout.pos.col = 3))
-
-
-Ger_arrange <- tmap_arrange(
-    fut_fin,
-    curr_std,
-    fut_std,
-    nrow = 1
-)
-```
-
-#### Base - Europe
-Remake of the plots in Mapsf to try different styles
 
 ```{r}
 pdf(
@@ -2556,38 +2472,6 @@ fox_density <- rast("./4_output/Predators/Fox_density.tif")
 fox_density %<>% crop(AOI[AOI$Name == "DEU", ]) %>% mask(AOI[AOI$Name == "DEU", ], filename = "./4_output/Predators/Fox_density.tif", overwrite = T)
 ```
 
-## Plot
-```{r}
-wolf_overlap <- rast("./4_output/Predators/wolf_overlap.tif")
-
-wolf_over <- tm_shape(wolf_overlap) + tm_raster(palette = my_col, title = "A) Wolf overlap") +
-    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
-
-lynx_overlap <- rast("./4_output/Predators/lynx_overlap.tif")
-
-lynx_over <- tm_shape(lynx_overlap) + tm_raster(palette = my_col, title = "B) Lynx overlap") +
-    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
-
-
-fox_density <- rast("./4_output/Predators/Fox_density.tif")
-fox_breaks <- c(0, 25, 50, 100, 200, 400, 800, Inf)
-
-fox_dens <- tm_shape(fox_density) + tm_raster(palette = my_col, title = "C) Fox density", breaks = fox_breaks) +
-    tm_shape(DE_districts$geometry[DE_districts$GF != 8]) + tm_borders(col = "black", lwd = 2) +
-    tm_shape(AOI) + tm_borders(col = "black", lwd = 2) +
-    tm_compass(type = my_comp_type, show.labels = my_comp_lable, size = my_comp_size, position = my_comp_pos)
-
-tmap_arrange(
-    wolf_over,
-    lynx_over,
-    fox_dens,
-    nrow = 1
-)
-```
 
 ### Base plot
 
@@ -2753,7 +2637,7 @@ area_table[,-1]  %<>% multiply_by(100)
 xtable(area_table,
     caption = "Todays and future suitability area per class in percent for Germany and Europe."
 ) %>%
-    print(file = "./4_output/Plots and tables/suitable areas.txt", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
+    print(file = "./4_output/Plots and tables/suitable areas.tex", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
 
 ```
 
@@ -2859,10 +2743,20 @@ levels(mess_raster_high_new) <- cls
 
 writeRaster(mess_raster_high_new, "./4_output/Result/MESS_final.tif")
 
+mess_raster_high_new <- rast("./4_output/Result/MESS_final.tif")
 my_bbox <- matrix(c(-1275875, 4470206, 3696405, 7907273), byrow = F, nrow = 2) %>% bbox()
 my_col <- c("#ffffff", "#99d8c9", "#1e854b")
-tm_shape(mess_raster_high_new, bbox = my_bbox) + tm_raster(palette = my_col, legend.show = T, title = "MESS analysis") +
+mess_plot <- tm_shape(mess_raster_high_new, bbox = my_bbox) + tm_raster(palette = my_col, legend.show = T, title = "MESS analysis") +
     tm_shape(AOI) + tm_borders(col = "black", lwd = 2)
+
+tmap_save(
+    tm = mess_plot,
+    filename = "./4_output/Plots and tables/MESS.pdf",
+    width = 10,
+    height = 7,
+    dpi = 300
+    )
+
 ```
 
 
