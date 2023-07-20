@@ -2042,13 +2042,8 @@ colnames(test_stat5) <- colnames(test_stat2)
 
 test_stat5 %<>% t()
 
-
-
-
-
-
 xtable(test_stat5,
-    caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+    caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score. Values including  standard deviation calculated across the cross validation runs."
     ) %>% 
 print(file = "./4_output/Plots and tables/MEAN_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
 
@@ -2288,6 +2283,7 @@ pdf(
     height = 9
    )
 
+# Create layout
 mat <- matrix(
     c(  1,1,1,2,
         1,1,1,3,
@@ -2303,6 +2299,7 @@ my_comp_lable <- 3
 my_comp_size <- 5
 my_comp_pos <- c("right", "top")
 
+# load and prepare data
 final_res_curr <- rast("./4_output/Result/TODAY_Final_map_GERMANY.tif")
 final_res_fut <- rast("./4_output/Result/FUTURE_Final_map_GERMANY.tif")
 my_bbox <- ext(final_res_curr)
@@ -2332,6 +2329,7 @@ pax <- list(
 
 inset <- c(0, 0, 0, 0)
 
+#plot
 {
 plot(final_res_curr[["final"]], ext = my_bbox, col = my_col, legend = F, pax = pax, mar = mar); plot(DE_districts$geometry[DE_districts$GF != 8], add = T)
 legend("topleft", legend = "A) Current suitability", cex = 2, box.lty = 0, bg = NA, inset = inset)
@@ -2660,7 +2658,7 @@ area_table <- GER_curr_area[,c(1,3)]  %>%
 area_table[,-1]  %<>% multiply_by(100)
 
 xtable(area_table,
-    caption = "Todays and future suitability area per class in percent for Germany and Europe."
+    caption = "Present and future area suitable for muntjac per assigned class in percent for Germany and Europe. Not Suitable = Both conservative and less conservative models reject that region, 1/2 Agrees = One of both indicates suitability for the muntjac, Both Agree = Both models agree in their prediction."
 ) %>%
     print(file = "./4_output/Plots and tables/suitable areas.tex", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
 
@@ -2939,11 +2937,11 @@ appendix_world_plot <-
         tm_borders("black") +
 
         tm_shape(extent_Europe) +
-        tm_borders(my_col[3], lwd = 3, lty = "dotted") +
+        tm_borders(my_col[3], lwd = 5, lty = "dashed") +
         tm_text("text", col = "black", size = 2, xmod = 0, ymod = -6, bg.color = "white") +
 
         tm_shape(extent_Asia) +
-        tm_borders(my_col[2], lwd = 3, lty = "dotted") +
+        tm_borders(my_col[2], lwd = 5, lty = "dashed") +
         tm_text("text", col = "black", size = 2, xmod = 0, ymod = 5.5, bg.color = "white") +
 
         tm_shape(extent_cons) +
