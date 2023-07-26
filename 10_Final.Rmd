@@ -1350,7 +1350,8 @@ owncount(col_result, "VIF", 10, "max") %>%
     )) %>%
     select(Predictor, "R²", VIF, Count) %>% 
     xtable(.,
-    caption = "Collinearity statistics of the used predictors. VIF = $\\frac{1}{R²}$ = Variance inflation factor. Sorted after VIF. Mean prec. = Annual mean precipitation, Mean temp. = Annual mean temperature, Count = Count of significant corellated variables + Intercept"
+    caption = "Collinearity statistics of the used predictors. VIF = $\\frac{1}{R²}$ = Variance inflation factor. Sorted after VIF. Mean prec. = Annual mean precipitation, Mean temp. = Annual mean temperature, Count = Count of significant corellated variables + Intercept",
+    label = "tab:collinearity"
 ) %>%
     print(file = "./4_output/Plots and tables/Collinearity.tex", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
 
@@ -1993,9 +1994,13 @@ test_stat <- cbind(
 ) %>% apply(., 2, as.numeric) 
 
 xtable(test_stat,
-    caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+    caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score.",
+    label = "tab:eu_test_stat"
     ) %>% 
-print(file = "./4_output/Plots and tables/EU_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
+print(
+    file = "./4_output/Plots and tables/EU_Test_Statistics.tex", 
+    caption.placement = getOption("xtable.caption.placement", "top")
+    )
 ```
 
 #### World - Appendix
@@ -2016,7 +2021,8 @@ test_stat2 <- cbind(
 ) %>% apply(., 2, as.numeric) 
 
 xtable(test_stat2,
-    caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score."
+    caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score.",
+    label = "tab:world_test_stat"
     ) %>% 
 print(file = "./4_output/Plots and tables/WORLD_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
 ```
@@ -2043,7 +2049,8 @@ colnames(test_stat5) <- colnames(test_stat2)
 test_stat5 %<>% t()
 
 xtable(test_stat5,
-    caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score. Values including  standard deviation calculated across the cross validation runs."
+    caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score. Values including  standard deviation calculated across the cross validation runs.",
+    label = "tab:mean_test_stat"
     ) %>% 
 print(file = "./4_output/Plots and tables/MEAN_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
 
@@ -2658,7 +2665,8 @@ area_table <- GER_curr_area[,c(1,3)]  %>%
 area_table[,-1]  %<>% multiply_by(100)
 
 xtable(area_table,
-    caption = "Present and future area suitable for muntjac per assigned class in percent for Germany and Europe. Not Suitable = Both conservative and less conservative models reject that region, 1/2 Agrees = One of both indicates suitability for the muntjac, Both Agree = Both models agree in their prediction."
+    caption = "Present and future area suitable for muntjac per assigned class in percent for Germany and Europe. Not Suitable = Both conservative and less conservative models reject that region, 1/2 Agrees = One of both indicates suitability for the muntjac, Both Agree = Both models agree in their prediction.",
+    label = "tab:suit_areas"
 ) %>%
     print(file = "./4_output/Plots and tables/suitable areas.tex", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
 
