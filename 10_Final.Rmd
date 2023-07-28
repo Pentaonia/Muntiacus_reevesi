@@ -2953,7 +2953,7 @@ appendix_world_plot <-
         tm_text("text", col = "black", size = 2, xmod = 0, ymod = 5.5, bg.color = "white") +
 
         tm_shape(extent_cons) +
-        tm_borders("black", lwd = 3, lty = "solid") +
+        tm_borders("orange", lwd = 5, lty = "dashed") +
         tm_text("text", col = "black", size = 2, xmod = 0, ymod = -8, bg.color = "white") +
 
         tm_shape(AOI) +
@@ -2961,7 +2961,7 @@ appendix_world_plot <-
         tm_borders(col = "black") +
 
 
-        tm_layout(legend.position = c("left", "bottom"), legend.bg.color = "white", legend.title.size = 1.5, legend.text.size = 1.4)
+        tm_layout(legend.position = c("left", "bottom"), legend.bg.color = "white", legend.title.size = 1.5, legend.text.size = 1.4, frame.lwd = 5)
 
 tmap_save(
     tm = appendix_world_plot,
