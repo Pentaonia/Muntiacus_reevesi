@@ -1292,14 +1292,16 @@ autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r / 1000, y = obs)) +
     ylab("F(r)") +
     xlab("Radius (km)") +
     labs(
-        title = "A) United Kingdom",
+        title = TeX("$\\textbf{A)\\ United\\ Kingdom$}"),
         subtitle = paste0(
             "p = ", 
             (autocorr$GB_fest %>% attr("einfo") %>% .$nSD)/(autocorr$GB_fest %>% attr("einfo") %>% .$nsim), 
             ",", 
             " n = ", 
             autocorr$muntgbif_GB_ppp$n
-            ))
+            )) + 
+    theme_minimal() + 
+    theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
 
 ## TW Plot
 autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r / 1000, y = obs)) +
@@ -1313,18 +1315,21 @@ autocorr$TW_fest_plot <- ggplot(autocorr$TW_fest, aes(x = r / 1000, y = obs)) +
     ylab("F(r)") +
     xlab("Radius (km)") +
     labs(
-        title = "B) Taiwan",
+        title = TeX("$\\textbf{B)\\  Taiwan$}"),
         subtitle = paste0(
             "p = ", 
             (autocorr$TW_fest %>% attr("einfo") %>% .$nSD)/(autocorr$TW_fest %>% attr("einfo") %>% .$nsim), 
             ",", 
             " n = ", 
             autocorr$muntgbif_TW_ppp$n
-            ))
+            )) + 
+    theme_minimal() + 
+    theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
 
 
 # Inter-event distribution for Taiwanese and Brittish muntjac occurrences
-autocorr$both_plot <- grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(2.55, 3))
+autocorr$both_plot <- grid.arrange(autocorr$GB_fest_plot , autocorr$TW_fest_plot, nrow = 1, widths = c(2.55, 3))
+ 
 
 save.to <- "./4_output/Plots and tables/"
 ggsave(
@@ -1415,7 +1420,7 @@ owncount(col_result, "VIF", 10, "max") %>%
     )) %>%
     select(Predictor, "R²", VIF, Count) %>% 
     xtable(.,
-        caption = "Collinearity statistics of the used predictors. VIF = $\\frac{1}{R²}$ = Variance inflation factor. Sorted after VIF. Mean prec. = Annual mean precipitation, Mean temp. = Annual mean temperature, Count = Count of significant corellated variables + Intercept",
+        caption = "Collinearity statistics of the used predictors. Mean prec. = Annual mean precipitation, Mean temp. = Annual mean temperature, $R^2$ = Proportion of the variation in the response that can be accounted for by the predictors, VIF = $\\frac{1}{R²}$ = Variance inflation factor. Table sorted after VIF. Count = Number of significant corellated variables + Intercept.",
         label = "tab:collinearity"
         ) %>%
     print(file = "./4_output/Plots and tables/Collinearity.tex", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
@@ -2060,7 +2065,7 @@ test_stat <-
     ) %>% apply(., 2, as.numeric) 
 
 xtable(test_stat,
-        caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score.",
+        caption = "Test statistics of the 25 cross-validation runs of the conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check whether the model internal algorithm discovers divergency and BRI = Brier score.",
         label = "tab:eu_test_stat"
         ) %>% 
     print(
@@ -2088,7 +2093,7 @@ test_stat2 <-
     ) %>% apply(., 2, as.numeric) 
 
 xtable(test_stat2,
-        caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score.",
+        caption = "Test statistics of the 25 cross-validation runs of the less conservative model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check whether the model internal algorithm discovers divergency and BRI = Brier score.",
         label = "tab:world_test_stat"
      ) %>% 
     print(file = "./4_output/Plots and tables/WORLD_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
@@ -2116,7 +2121,7 @@ colnames(test_stat5) <- colnames(test_stat2)
 test_stat5 %<>% t()
 
 xtable(test_stat5,
-        caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check wether the model internal algorythm discovers divergency and BRI = Brier score. Values including  standard deviation calculated across the cross validation runs.",
+        caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check whether the model internal algorithm discovers divergency and BRI = Brier score. Values including  standard deviation calculated across the cross validation runs.",
         label = "tab:mean_test_stat"
         ) %>% 
     print(file = "./4_output/Plots and tables/MEAN_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
