@@ -1,5 +1,3 @@
 .vscode/
 .lintr
-.gitignore
-.vscode
-old_plots.R
+
