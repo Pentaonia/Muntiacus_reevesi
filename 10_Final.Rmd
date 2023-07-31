@@ -57,7 +57,7 @@ library(latex2exp)
 set.seed(2121997)
 ```
 
-## Self defined functions {.tabset}
+## Self defined functions {.tabset .tabset-pills}
 
 ### Negate
 Negated version of the "Value Matching"-Function.
@@ -115,7 +115,7 @@ List of:
 - __removedNA__ = Removed points due to NA in an environmental layer.
 
 ```{r}
-fuzzySim::percentTestData(5) # in our case at the end 5 main variables
+fuzzySim::percentTestData(5) # in our case: 5 main variables
 
 extraction_format <- function(start, species, most.important = NULL, randoms = NULL) {
     if (class(most.important) != "NULL") {
@@ -281,7 +281,7 @@ Input:
 
 Output:
 
-- result = tibble with several columns, nrow(result) = ncol(vars).
+- result = Tibble with several columns, nrow(result) = ncol(vars).
     - __Rsquared__ = R² of the built model.
     - __Tolerance__ = 1 - R²
     - __VIF__ = Variance Inflation Factor 1 / (1 - R²).
@@ -344,7 +344,7 @@ Input:
 
 Output:
 
-- __distance__ = Distance of every point in _a_ to the nearest polygon in _b_.
+- __distance__ = Tibble with ncol() = length(b) and nrow = nrow(a), Distance of every point in _a_ to the nearest polygon in _b_.
 
 ```{r}
 nearestdistance_to <- function(a, b) {
@@ -418,60 +418,9 @@ get_and_calc_bri <- function(x) {
 ```
 
 
-### Easy prediction wrapper - NOT RECOMMENDED!
-Predicts a stan4bart model to a SpatRaster of environmental variables.
-Only recommended if the raster is relatively small, low number of predictions or predictions to different raster are pending.
-If you often use the same raster stack for prediction, use the other function where you have to export your raster as table first.
-
-Input:
-
-- __model__ = stan4bart object with "keepTrees = T".
-- __raster__ = SpatRaster with new environment (for prediction) or old environment (for inter/extrapolation).
-- __type__ = One of types of predict.stan4bartFit.
-
-Output:
-
-- __new_raster__ = Predicted raster.
-
-```{r}
-raster_pred_stan4bart <- function(model, raster, type = "ev") {
-    # Raster conversion to df and save places where not NA, afterwards remove NAs
-    data_map_df <- as.matrix(raster, xy = F, na.rm = F, byrow = T) %>% as.data.frame()
-    data_map_df_comp <- which(complete.cases(data_map_df))
-    data_map_df <- data_map_df[data_map_df_comp, ]
-
-    # predicting the df with help of the generic function
-    new_data <- predict.stan4bartFit(
-        object = model,
-        newdata = data_map_df,
-        type = type,
-        combine_chains = TRUE,
-        sample_new_levels = TRUE
-    ) %>%
-        rowMeans(na.rm = T) # Here you can tweak how many iterations should be included at the end. If the model needs a long time for reaching convergence it might be interesting to look at different stages. Looking at only one iteration at once, you can see the model "learning".
-
-    # preparation to rasterize the df
-    pre_raster <- rep(NA, ncell(raster))
-    pre_raster[data_map_df_comp] <- new_data
-    pre_raster %<>%
-        matrix(
-            nrow = nrow(raster),
-            ncol = ncol(raster),
-            byrow = T
-        )
-
-    # create the new raster
-    new_raster <- rast(
-        pre_raster,
-        crs = crs(raster),
-        extent = ext(raster)
-    )
-
-    return(new_raster)
-}
-```
-
 ### Efficient prediction
+
+__Attention:__ A better solution is in development and might be published in future as a package.
 
 #### Raster preparation
 Function that converts a raster into a table for efficient reuse in prediction function.
@@ -519,13 +468,13 @@ Input:
 - __complete_cases__ = Object created with read.table("*_comp_cases.txt").
 - __base_raster__ = Raster with the same properties as the raster from which the newdata object was created. --> The function needs to know on which basis the resulting raster has to be built.
 - __type__ = One of the types of predict.stan4bartFit.
-- __coltake__ = Object created in the for-loop later on, is only needed if you want only a part of the iterations/chains in your result. It simply is a vector of values $\in$ [1, iterations*chains] for every iteration (of chains) that should be used.
+- __coltake__ = Object created in the for-loop later on. It is needed if you want only a part of the iterations/chains in your result. It simply is a vector of values $\in$ [1, iterations*chains] for every iteration (of chains) that should be used.
 
-As the predicted chains and iterations are combined to one big matrix (colbind, one column per iteration) it applies for creating __coltake__:
+    - As the predicted chains and iterations are combined to one big matrix (colbind, one column per iteration) it applies for creating __coltake__:
 
-- 1. Chain [1, iterations-burn_in]
-- 2. Chain [iterations-burn_in+1, (iterations-burn_in)*2]
-- n. Chain [(iterations-burn_in)\*(n-1)+1, (iterations-burn_in)\*n]
+      - 1. Chain: [1, iterations-burn_in]
+      - 2. Chain: [iterations-burn_in+1, (iterations-burn_in)*2]
+      - n. Chain: [(iterations-burn_in)\*(n-1)+1, (iterations-burn_in)\*n]
 
 Output:
 
@@ -605,7 +554,7 @@ dir.create("./4_output")
 ```
 
 ## Variables 
-### Boundaries World and Area of interest {.tabset}
+### Boundaries: World and Area of interest {.tabset .tabset-pills}
 Chosen countries as area of interest (AOI).
 ```{r}
 countryCodes <- tibble(isoA3 = vector(length = 40))
@@ -643,7 +592,7 @@ st_write(AOI, "./3_ready/AOI_border.shp", append = F)
 AOI <- st_read("./3_ready/AOI_border.shp")
 ```
 
-### Response (_Muntiacus reevesi_ occurrences) {.tabset}
+### Response (_Muntiacus reevesi_ occurrences) {.tabset .tabset-pills}
 #### GBIF
 Source: [GBIF](https://www.gbif.org/occurrence/download/0065916-230224095556074)
  
@@ -744,7 +693,7 @@ water <- st_read("./2_work/world_water.shp")
 
 water %<>%
     select(ISO_CC, geometry) %>%
-    sf::st_simplify(dTolerance = 100)
+    sf::st_simplify(dTolerance = 100) # The shape has to be simplified because its to big to be handled with adequate speed
 
 st_write(water, "./2_work/water_simple.shp")
 water <- st_read("./2_work/water_simple.shp")
@@ -777,7 +726,7 @@ roads <- st_read("./1_input/ne_10m_roads.shp")
 
 roads %<>%
     select(type, name, length_km, continent, geometry) %>%
-    filter(type != "Ferry Route", type != "Ferry, seasonal") %>% # Important: Filter water ways5
+    filter(type != "Ferry Route", type != "Ferry, seasonal") %>% # Important: Filter water ways
     st_transform(crs = 4087)
 
 st_write(roads, "./3_ready/roads.shp", append = F)
@@ -873,7 +822,7 @@ merge(mergerast, landCover, filename = "./2_work/landcover_merge.tif")
 landCover <- rast("./2_work/landcover_merge.tif")
 ```
 
-### Distance maps to Urban areas, Water and streets {.tabset}
+### Distance maps to Urban areas, Water and streets {.tabset .tabset-pills}
 #### Step I
 The fist step was the rasterization of the urban areas, waters and streets in QGIS. Export them as "WORLD_roads_raster.tif", "WORLD_urban_raster.tif" and "WORLD_water_raster.tif" with CRS = EPSG4087. R works too inefficiently on large rasters. You can also try the ´fasterize´ function, though its not working with MULTILINESTRING at the moment. Alternatively, use the "RQGIS"-Package.
 
@@ -926,7 +875,7 @@ wbt_euclidean_distance(
 ### Combine
 Combine all, crop to AOI and resample for faster preliminary model runs.
 
-Note: The distane maps are not available in world size, therefore the distances to roads, waters and urban areas have to be extracted in another way later on.
+Note: The distane maps are not available in world size because the eucledean distance calculation is too resource intensive, therefore the distances to roads, waters and urban areas have to be extracted in another way later on.
 That means that the AOI_environment.tif is fully self contained in all environmental factors that are needed but the WORLD_environment.tif is not.
 
 ```{r}
@@ -974,26 +923,26 @@ EU_environment <- rast("./3_ready/EU_environment.tif")
 
 # Resample with stacks is not possible at this moment in whitebox but will hopefully be included in future, therefore use the terra function, velox or QGIS.
 
-wbt_resample(
-    inputs = "./3_ready/WORLD_environment.tif",
-    output = "./3_ready/WORLD_environment_low.tif",
-    cell_size = 5000,
-    method = "cc"
-)
+# wbt_resample(
+#     inputs = "./3_ready/WORLD_environment.tif",
+#     output = "./3_ready/WORLD_environment_low.tif",
+#     cell_size = 5000,
+#     method = "cc"
+# )
 
-wbt_resample(
-    inputs = "./3_ready/AOI_environment.tif",
-    output = "./3_ready/AOI_environment_low.tif",
-    cell_size = 5000,
-    method = "cc"
-)
+# wbt_resample(
+#     inputs = "./3_ready/AOI_environment.tif",
+#     output = "./3_ready/AOI_environment_low.tif",
+#     cell_size = 5000,
+#     method = "cc"
+# )
 
-wbt_resample(
-    inputs = "./3_ready/EU_environment.tif",
-    output = "./3_ready/EU_environment_low.tif",
-    cell_size = 5000,
-    method = "cc"
-)
+# wbt_resample(
+#     inputs = "./3_ready/EU_environment.tif",
+#     output = "./3_ready/EU_environment_low.tif",
+#     cell_size = 5000,
+#     method = "cc"
+# )
 
 # Terra aggregrate
 
@@ -1021,7 +970,7 @@ EU_environment_low <- rast("./3_ready/EU_environment_low.tif")
 ```
 
 
-### Future conditions {.tabset}
+### Future conditions {.tabset .tabset-pills}
 #### Future climate
 Source: [World Climate Reseach Programme](https://doi.org/10.22033/ESGF/CMIP6.4332)
 
@@ -1041,7 +990,7 @@ dir.create("./2_work/future data")
 writeRaster(future_climate, "./2_work/future data/EU_climate.tif", overwrite = T)
 ```
 
-#### Future Urban
+#### Future urban
 Source: [Land-Use Harmonization²](https://luh.umd.edu/data.shtml) and [Extractions made available here](https://doi.org/10.17161/bi.v16i1.15483)
 
 Only Europe is needed for prediction.
@@ -1056,7 +1005,7 @@ future_urban %<>%
 writeRaster(future_urban, "./2_work/future data/urban_low.tif", overwrite = T)
 ```
 
-#### Future Forest
+#### Future forest
 Source: [Land-Use Harmonization²](https://luh.umd.edu/data.shtml) and [Extractions made available here](https://doi.org/10.17161/bi.v16i1.15483)
 
 Here two forest raster files are combined: primary and secondary forest.
@@ -1074,7 +1023,7 @@ writeRaster(future_forest, "./2_work/future data/forest_low.tif", overwrite = T)
 ```
 
 #### Resampling
-Attention: In my case, the whitebox had a bug in piping the resample function to the shell. Therefore I corrected the function.
+Attention: In my case, the whitebox had a bug in piping the resample function to the shell. Therefore I corrected the function and included it at the beginning.
 
 ```{r}
 wbt_resample(
@@ -1158,7 +1107,7 @@ future_final <- rast("./3_ready/FUTURE_EU_environment.tif")
 dir.create("./3_ready/model input")
 ```
 
-## Input environment {.tabset}
+## Input environment {.tabset .tabset-pills}
 ### World high resolution
 ```{r}
 all_data <- extraction_format(
@@ -1276,9 +1225,22 @@ autocorr$muntgbif_TW_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %in% c("
 Window(autocorr$muntgbif_TW_ppp) <- as.owin(AOI[AOI$Name %in% c("TWN"), ])
 unitname(autocorr$muntgbif_TW_ppp) <- "m/m"
 
-# Test against 100 Monte Carlo iterations of complete spatial randomness
-autocorr$GB_fest <- envelope(autocorr$muntgbif_GB_ppp, fun = "Fest", nsim = 1000, funargs = list(r = seq(0, 14000, 500)))
-autocorr$TW_fest <- envelope(autocorr$muntgbif_TW_ppp, fun = "Fest", nsim = 1000, funargs = list(r = seq(0, 14000, 500)))
+# Test against 1000 Monte Carlo iterations of complete spatial randomness
+autocorr$GB_fest <- 
+    envelope(
+        autocorr$muntgbif_GB_ppp, 
+        fun = "Fest", 
+        nsim = 1000, 
+        funargs = list(r = seq(0, 14000, 500))
+    )
+
+autocorr$TW_fest <- 
+    envelope(
+        autocorr$muntgbif_TW_ppp, 
+        fun = "Fest", 
+        nsim = 1000, 
+        funargs = list(r = seq(0, 14000, 500))
+    )
 
 ## GB Plot
 autocorr$GB_fest_plot <- ggplot(autocorr$GB_fest, aes(x = r / 1000, y = obs)) +
@@ -1344,6 +1306,7 @@ ggsave(
 
 #### Continent wide ####
 # Not really needed, just for the sake of completeness
+# Attention: Overwrites the national analysis!
 
 ## Europe
 autocorr$muntgbif_GB_ppp <- as.ppp(Presences.join$geometry[AOI[AOI$Name %!in% c("TWN", "CHN"), ]])
@@ -1393,6 +1356,11 @@ grid.arrange(autocorr$GB_fest_plot, autocorr$TW_fest_plot, nrow = 1, widths = c(
 
 # Collinearity
 ```{r}
+dir.create("./4_output/Plots and tables/")
+```
+
+At the end: Export as a table that can be imported into LaTeX.
+```{r}
 load("./3_ready/model input/PA_WORLD.Rdata")
 
 col_test_df <- all_data$train.df %>%
@@ -1400,7 +1368,10 @@ col_test_df <- all_data$train.df %>%
     filter(pa == 1)
 
 col_result <- col_test_df %>%
-    select(bio_1, bio_12, road_distance, trees, shrubs, cropland, water_distance, slope, grassland, urban_distance, water) %>%
+    select(
+        bio_1, bio_12, road_distance, trees, shrubs, cropland, 
+        water_distance, slope, grassland, urban_distance, water
+        ) %>%
     multicol_own()
 
 owncount(col_result, "VIF", 10, "max")
@@ -1411,8 +1382,8 @@ col_result <- col_test_df %>%
 
 owncount(col_result, "VIF", 10, "max") %>%
     mutate(Predictor = case_when(
-        factor == "bio_1" ~ "Mean temp.",
-        factor == "bio_12" ~ "Mean prec.",
+        factor == "bio_1" ~ "Annual mean temperature",
+        factor == "bio_12" ~ "Annual mean precipitation",
         factor == "slope" ~ "Slope",
         factor == "trees" ~ "Trees",
         factor == "water_distance" ~ "Water distance",
@@ -1420,10 +1391,13 @@ owncount(col_result, "VIF", 10, "max") %>%
     )) %>%
     select(Predictor, "R²", VIF, Count) %>% 
     xtable(.,
-        caption = "Collinearity statistics of the used predictors. Mean prec. = Annual mean precipitation, Mean temp. = Annual mean temperature, $R^2$ = Proportion of the variation in the response that can be accounted for by the predictors, VIF = $\\frac{1}{R²}$ = Variance inflation factor. Table sorted after VIF. Count = Number of significant corellated variables + Intercept.",
+        caption = "Collinearity statistics of the used predictors. Trees = Index combination of all woodland environments, $R^2$ = Proportion of the variation in the response that can be accounted for by the predictors, VIF = $\\frac{1}{R²}$ = Variance inflation factor. Table sorted after VIF. Count = Number of significant corellated variables + Intercept.",
         label = "tab:collinearity"
         ) %>%
-    print(file = "./4_output/Plots and tables/Collinearity.tex", caption.placement = getOption("xtable.caption.placement", "top"), include.rownames=FALSE)
+    print(
+        file = "./4_output/Plots and tables/Collinearity.tex", 
+        caption.placement = getOption("xtable.caption.placement", "top"), 
+        include.rownames=FALSE)
 
 ```
 
@@ -1450,6 +1424,7 @@ dir.create("./4_output/6. WORLD_hig_res_CV_PRED_future/")
 ```
 
 Cross valiation loop, parameterization and predictions.
+Adapt the formula further down to your needs.
 
 Input:
 
@@ -1463,14 +1438,17 @@ Output:
 
 - __test_stat.RData__ = RData document that includes the calculated test statistics. All objects are lists of lenght == cv.runs.
     - evaluation.cv = ROCR-Object for evaluation of the model i.
-    - auc.cv = Area under the curve value per model $\in$ [0,1], the higher the better.
-    - tss.thresh = Threshold where TSS $\in$ [0,1] is highest, the higher the better.
-    - tss = True skill statistics test value $\in$ [0,1], the higher the better.
+    - auc.cv = Area under the curve value per model $\in$ [0,1].
+    - tss.thresh = Threshold where TSS $\in$ [0,1] is highest.
+    - tss = True skill statistics test value $\in$ [0,1].
     - acceptance = Is the model accepted $\in$ {TRUE, FALSE}.
-    - accurr = Accurracy of the model $\in$ [0,1], the higher the better.
-    - convergence = Internal convergence check $\in$ {0,1}, has to be 1 .
-    - tree_vars_imp = Variable importance, mean and standard deviation per used environmental variable per CV-run. List of arrays with list lenght == cv.runs and array dimensions $\in$ {lenght(most.important), 2, cv.runs}.
-    - bri = Brier Score $\in$ [0,1], the lower the better.
+    - accurr = Accurracy of the model $\in$ [0,1].
+    - convergence = Internal convergence check $\in$ [0,1], has to be 1 .
+    - tree_vars_imp = Variable importance, mean and standard deviation per used environmental variable per CV-run. List of arrays with list lenght == cv.runs and array dimensions = {rows, cols, depth}.
+      - rows = length(most.important)
+      - cols = 2, mean and sd
+      - depth = cv.runs 
+    - bri = Brier Score $\in$ [0,1].
 - __Run_[1,cv.runs].tif__ = GEOTiffs of one raster per CV-Run with the spatial probability of presence prediction.
 
 
@@ -1719,7 +1697,7 @@ for (i in 1:cv.runs) {
         print(paste("Model", i, "rejected!"))
     }
 
-    # save model and test results in case of PC crashing when calculating big models
+    # save model and test results every 2. run in case of PC crashing when calculating big models
     if (i %% 2 == 0) {
         save(evaluation.cv, auc.cv, tss.thresh, tss, acceptance, accurr, convergence, tree_vars_imp, bri, file = paste0(path_to_store, "test_stat.RData"))
     }
@@ -1750,109 +1728,6 @@ print("############### DONE! ###############")
 ```
 
 # Exploring the data
-## Load right data for further proceeding
-Here you can run the necessary columns to load the data of a specific CV-run.
-
-```{r}
-# ################ 1
-# Predict from AOI to low EU
-path_to_store <- "./4_output/1.EU_high_res_CV_PRED_low_res/"
-load(paste0(path_to_store, "test_stat.RData"))
-model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pattern = "*.tif")))
-
-# ################ 2
-# Predict from AOI to high EU
-path_to_store <- "./4_output/2.EU_high_res_CV_PRED_high_res/"
-load(paste0(path_to_store, "test_stat.RData"))
-model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pattern = "*.tif")))
-
-# ################ 3
-# Predict from WORLD to low EU
-path_to_store <- "./4_output/3.WORLD_high_res_CV_PRED_low_res/"
-load(paste0(path_to_store, "test_stat.RData"))
-model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pattern = "*.tif")))
-
-# ################ 4
-# Predict from WORLD to high EU
-path_to_store <- "./4_output/4.WORLD_high_res_CV_PRED_high_res/"
-load(paste0(path_to_store, "test_stat.RData"))
-model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pattern = "*.tif")))
-
-# ################ 5
-# Predict from AOI to FUTURE
-path_to_store <- "./4_output/5. EU_hig_res_CV_PRED_future/"
-load(paste0(path_to_store, "test_stat.RData"))
-model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pattern = "*.tif")))
-
-# ################ 6
-# Predict from WORLD to FUTURE
-path_to_store <- "./4_output/6. WORLD_hig_res_CV_PRED_future/"
-load(paste0(path_to_store, "test_stat.RData"))
-model.stan.predict.cv <- rast(paste0(path_to_store, list.files(path_to_store, pattern = "*.tif")))
-```
-
-## Variable importance
-
-Plots for checking each prediction subset
-
-```{r}
-
-for (i in seq(1,length(tree_vars_imp), 1)) {
-   rownames(tree_vars_imp[[i]]) <- c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope")
-}
-
-
-tree_vars_imp_mean <- array(unlist(tree_vars_imp), dim = c(nrow(tree_vars_imp[[1]]), 2, length(tree_vars_imp))) %>%
-    apply(1:2, mean) %>%
-    as_tibble() %>%
-    mutate(
-        names = c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope"),
-        mean = V1*100, 
-        sd = V2*100) %>% 
-    select(names, mean, sd)
-
-
-
-
-# Mean Importance in percent over all chains and iterations
-ggplot(tree_vars_imp_mean, aes(y = names, x = mean), size = 2) +
-    geom_linerange(aes(xmin = mean - sd, xmax = mean + sd), col = "#1e854b", linewidth = 1.2) +
-    geom_point(col = "black", size = 3) +
-    xlab("Permutation importance in %") +
-    ylab("Predictors in BART component") +
-    theme_bw() +
-    theme(
-        text=element_text(size=20), 
-        axis.text.x = element_text(vjust = -2), 
-        axis.title.y = element_text(margin = margin(r = 20)), 
-        axis.title.x = element_text(margin = margin(t = 20))
-        )
-
-
-# Convert matrix to data frame for use in ggplot2
-my_dataframe <- reshape2::melt(tree_vars_imp, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp[[1]]), max(L2) * 2))
-
-# Advanced plot
-# X-Axis = Iterations
-# Y-Axis = Variable importance
-# Boxplot = Importance of that variable over the CV-runs
-# Line = Exact variable importance per iteration
-ggplot(my_dataframe %>% filter(variable == "mean"), aes(x = L2, y = value, group = name)) +
-    geom_line(aes(col = name)) +
-    geom_boxplot(aes(col = name), fill = NA) + 
-        xlab("CV run") +
-    ylab("Permutation importance in %") +
-    theme_bw() +
-    theme(
-        text=element_text(size=20), 
-        axis.text.x = element_text(vjust = -2), 
-        axis.title.y = element_text(margin = margin(r = 20)), 
-        axis.title.x = element_text(margin = margin(t = 20))
-        )  + 
-    labs(color="Predictors in \nBART component")
-
-```
-
 ## Final variable importance plot
 ### Europe
 ```{r}
@@ -1868,13 +1743,18 @@ for (i in seq(1,length(tree_vars_imp), 1)) {
 
 tree_vars_imp_EU <- tree_vars_imp
 
-tree_vars_imp_mean_EU <- array(unlist(tree_vars_imp_EU), dim = c(nrow(tree_vars_imp_EU[[1]]), 2, length(tree_vars_imp_EU))) %>%
+tree_vars_imp_mean_EU <- 
+    array(
+        unlist(tree_vars_imp_EU), 
+        dim = c(nrow(tree_vars_imp_EU[[1]]), 2, length(tree_vars_imp_EU))
+    ) %>%
     apply(1:2, mean) %>%
     as_tibble() %>%
     mutate(
         names = c("Mean temp.", "Mean prec.", "Tree density", "Water distance", "Slope"),
         mean = V1*100, 
-        sd = V2*100) %>% 
+        sd = V2*100
+        ) %>% 
     select(names, mean, sd)
 
 
@@ -1894,7 +1774,9 @@ tree_vars_imp_plot_EU <- ggplot(tree_vars_imp_mean_EU, aes(y = names, x = mean),
     scale_y_discrete(limits=rev)
 
 # Convert matrix to data frame for use in ggplot2
-my_dataframe_EU <- reshape2::melt(tree_vars_imp_EU, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp_EU[[1]]), max(L2) * 2))
+my_dataframe_EU <- 
+    reshape2::melt(tree_vars_imp_EU, level = 2) %>% 
+    mutate(name = rep(rownames(tree_vars_imp_EU[[1]]), max(L2) * 2))
 
 # Advanced plot
 # X-Axis = Iterations
@@ -1931,7 +1813,11 @@ for (i in seq(1,length(tree_vars_imp), 1)) {
 }
 
 tree_vars_imp_WORLD <- tree_vars_imp
-tree_vars_imp_mean_WORLD <- array(unlist(tree_vars_imp_WORLD), dim = c(nrow(tree_vars_imp_WORLD[[1]]), 2, length(tree_vars_imp_WORLD))) %>%
+tree_vars_imp_mean_WORLD <- 
+    array(
+        unlist(tree_vars_imp_WORLD), 
+        dim = c(nrow(tree_vars_imp_WORLD[[1]]), 2, length(tree_vars_imp_WORLD))
+    ) %>%
     apply(1:2, mean) %>%
     as_tibble() %>%
     mutate(
@@ -1958,7 +1844,9 @@ tree_vars_imp_plot_WORLD <- ggplot(tree_vars_imp_mean_WORLD, aes(y = names, x = 
 
 
 # Convert matrix to data frame for use in ggplot2
-my_dataframe_WORLD <- reshape2::melt(tree_vars_imp_WORLD, level = 2) %>% mutate(name = rep(rownames(tree_vars_imp_WORLD[[1]]), max(L2) * 2))
+my_dataframe_WORLD <- 
+    reshape2::melt(tree_vars_imp_WORLD, level = 2) %>% 
+    mutate(name = rep(rownames(tree_vars_imp_WORLD[[1]]), max(L2) * 2))
 
 # Advanced plot
 # X-Axis = Iterations
@@ -2012,9 +1900,16 @@ tree_vars_imp_plot_tog <- ggplot(tree_vars_imp_mean_TOGETHER, aes(y = names, x =
 ```{r}
 save.to <- "./4_output/Plots and tables/"
 
-plots <- list(tree_vars_imp_plot_EU, tree_vars_imp_plot_EU_adv, tree_vars_imp_plot_WORLD, tree_vars_imp_plot_WORLD_adv, tree_vars_imp_plot_tog)
+plots <- 
+    list(
+        tree_vars_imp_plot_EU, tree_vars_imp_plot_EU_adv, 
+        tree_vars_imp_plot_WORLD, tree_vars_imp_plot_WORLD_adv, tree_vars_imp_plot_tog
+    )
 
-plot_names <- c("tree_vars_imp_plot_EU", "tree_vars_imp_plot_EU_adv", "tree_vars_imp_plot_WORLD", "tree_vars_imp_plot_WORLD_adv", "tree_vars_imp_plot_tog")
+plot_names <- 
+    c(
+        "tree_vars_imp_plot_EU", "tree_vars_imp_plot_EU_adv", 
+        "tree_vars_imp_plot_WORLD", "tree_vars_imp_plot_WORLD_adv", "tree_vars_imp_plot_tog")
 
 for (i in 1:5) {
    ggsave(
@@ -2031,17 +1926,19 @@ for (i in 1:5) {
 
 
 ## Test statistics
+One model run per intex.
 ```{r}
-evaluation.cv # Can be used in the ROCR internal statistic functions
+index <- 1
+evaluation.cv[index] # Can be used in the ROCR internal statistic functions
 
 # pre evaluated statistics
-auc.cv
-tss.thresh
-tss
-acceptance
-accurr
-convergence
-bri
+auc.cv[index]
+tss.thresh[index]
+tss[index]
+acceptance[index]
+accurr[index]
+convergence[index]
+bri[index]
 ```
 
 ### Appendix table for Test statistics
@@ -2102,9 +1999,20 @@ xtable(test_stat2,
 #### Summary - results
 
 ```{r}
+options(scipen=999)
+test_stat3 <- 
+    c(
+        test_stat %>% colMeans(), 
+        test_stat2 %>% colMeans()
+    ) %>% 
+    round(2)
 
-test_stat3 <- c(test_stat %>% colMeans(), test_stat2 %>% colMeans()) %>% round(2)
-test_stat3_sd <- c(test_stat %>% apply(., 2,sd), test_stat2 %>% apply(., 2,sd)) %>% round(5)
+test_stat3_sd <- 
+    c(
+        test_stat %>% apply(., 2,sd), 
+        test_stat2 %>% apply(., 2,sd)
+    ) %>% 
+    round(3)
 
 test_stat4 <- vector()
 
@@ -2113,15 +2021,15 @@ for (i in 1:14) {
 }
 
 
-test_stat5 <- c(0.9, 0.9, 0.9, NA, 1,0, 0.05,test_stat4) %>% matrix(nrow = 3, byrow = T)
+test_stat5 <- c("> 0.9", "> 0.9", "> 0.9", "NA", "= 1","= 0", "< 0.05",test_stat4) %>% matrix(nrow = 3, byrow = T)
 
-rownames(test_stat5) <- c("Min. Thresh", "Europe", "World")
+rownames(test_stat5) <- c("Minimum threshold", "Europe", "World")
 colnames(test_stat5) <- colnames(test_stat2)
 
 test_stat5 %<>% t()
 
 xtable(test_stat5,
-        caption = "Min Thresholds (Min. Thresh) and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check whether the model internal algorithm discovers divergency and BRI = Brier score. Values including  standard deviation calculated across the cross validation runs.",
+        caption = "Minimum thresholds for for model acceptance and mean test statistics of the 25 cross-validation runs of both the conservative (Europe) and less conservative (World) model runs. AUC = Area under the receiver operator curve, Accuracy = Accurracy of the models, TSS = True skill statistics, TSS Thresh = Threshold of suitability where Accuracy maximal, Accepted = Acceptance of the model run (1 = Accepted, 0 = Not accepted), Divergent = Check whether the model internal algorithm discovers divergency and BRI = Brier score. Values including  standard deviation calculated across the cross validation runs.",
         label = "tab:mean_test_stat"
         ) %>% 
     print(file = "./4_output/Plots and tables/MEAN_Test_Statistics.tex", caption.placement = getOption("xtable.caption.placement", "top"))
@@ -2136,7 +2044,7 @@ xtable(test_stat5,
 dir.create("./4_output/Result")
 ```
 
-### Today {.tabset}
+### Today {.tabset .tabset-pills}
 #### Mean over all CV-Runs and base datasets
 ```{r}
 ###### Europe
@@ -2188,7 +2096,7 @@ names(final_res) <- c("EU_mean", "EU_thresh", "WORLD_mean", "WORLD_thresh", "fin
 terra::writeRaster(final_res, "./4_output/Result/TODAY_Final_map.tif", overwrite = T)
 ```
 
-### Future {.tabset}
+### Future {.tabset .tabset-pills}
 #### Mean overall CV-Runs and base datasets
 ```{r}
 ###### Europe
@@ -2250,7 +2158,7 @@ rast("./4_output/Result/FUTURE_Final_map.tif") %>%
     mask(AOI[AOI$Name == "DEU", ], filename = "./4_output/Result/FUTURE_Final_map_GERMANY.tif", overwrite = TRUE)
 ```
 
-### Plots .{tabset}
+### Plots
 ```{r}
 AOI <- st_read("./3_ready/AOI_border.shp")
 
@@ -2270,7 +2178,7 @@ DE_districts <- st_read("./1_input/German_States/vg2500_12-31.tm32.shape/vg2500/
 
 #### Base - Europe
 
-EU-wide and Germany-wide plots of the suitability for today, future prediction, and the standard deviations between all model runs
+EU-wide plots of the suitability for today, future prediction, and the standard deviations between all model runs
 
 ```{r}
 save.to <- "./4_output/Plots and tables/"
@@ -2377,7 +2285,7 @@ dev.off()
 ```
 
 #### Base - Germany
-
+Germany-wide plots of the suitability for today, future prediction, and the standard deviations between all model runs
 ```{r}
 pdf(
     file = paste0(save.to, "GERMANY_plot", ".pdf"),
@@ -2479,7 +2387,7 @@ dev.off()
 ```
 
 
-# Predators {.tabset}
+# Predators {.tabset .tabset-pills}
 ## Wolf
 First, georeference the map from the paper: [Kramer-Schadt et al., 2020](https://doi.org/10.19217/skr556)
 
@@ -2499,7 +2407,8 @@ wolf_work2 <- ifel(wolf_work %in% c(176, 234, 147, 148, 206, 197, 142, 149, 186,
 wolf_work2 <- wolf_work2 %>% sum()
 
 # Calculation
-ifel(wolf_work2 %in% seq(100, 900, 1), 10, 0) %>% writeRaster("./2_work/predators/wolf_work3.tif", overwrite = T)
+ifel(wolf_work2 %in% seq(100, 900, 1), 10, 0) %>% 
+    writeRaster("./2_work/predators/wolf_work3.tif", overwrite = T)
 
 wbt_resample(
     inputs = "./2_work/predators/wolf_work3.tif",
@@ -2546,7 +2455,8 @@ lynx_work2 <- ifel(lynx_work %in% c(0, 1, 211, 183, 206), 0, lynx_work)
 lynx_work2 <- lynx_work %>% sum()
 
 # Calculation
-ifel(lynx_work2 %in% c(seq(10, 30, 1), seq(450, 500, 1)), 10, 0) %>% writeRaster("./2_work/predators/lynx_work3.tif", overwrite = T)
+ifel(lynx_work2 %in% c(seq(10, 30, 1), seq(450, 500, 1)), 10, 0) %>% 
+    writeRaster("./2_work/predators/lynx_work3.tif", overwrite = T)
 
 wbt_resample(
     inputs = "./2_work/predators/lynx_work3.tif",
@@ -2610,11 +2520,13 @@ wbt_heat_map(
 )
 
 fox_density <- rast("./4_output/Predators/Fox_density.tif")
-fox_density %<>% crop(AOI[AOI$Name == "DEU", ]) %>% mask(AOI[AOI$Name == "DEU", ], filename = "./4_output/Predators/Fox_density.tif", overwrite = T)
+fox_density %<>% 
+    crop(AOI[AOI$Name == "DEU", ]) %>% 
+    mask(AOI[AOI$Name == "DEU", ], filename = "./4_output/Predators/Fox_density.tif", overwrite = T)
 ```
 
 
-### Base plot
+### Plot
 
 ```{r}
 pdf(
@@ -2689,7 +2601,7 @@ rasterImage(legend_image, 0, 0.5, 1,0.8)
 dev.off()
 ```
 
-# Area calculations {.tabset}
+# Area calculations {.tabset .tabset-pills}
 ## Europe
 ```{r}
 ## Today
@@ -2814,7 +2726,7 @@ c(
 
 c(
     "Lynx_Muntjac_overlap" = Lynx_area[2:3, 3] %>% sum(),
-    "Lynx_Cover_Germany" = Lynx_cover_area[2, 3] - 0.01 # minus 1 % due to high digitalization fragments within the map
+    "Lynx_Cover_Germany" = Lynx_cover_area[2, 3] - 0.01 # minus 1 % due to large digitalization fragments within the map
 )
 ```
 
@@ -2976,7 +2888,7 @@ for (i in 1:5) {
     g_plot2[[i]] <- extract_subtitle(g_plot1[[i]])
 }
 
-# paste necessary parts of the subtitle into the graph
+# paste necessary parts of the subtitle and specific settings into the graph
 for (i in 1:5) {
     g_plot1[[i]] <- g_plot1[[i]] + 
         labs(subtitle = g_plot2[[i]][c(1:3, 7)]) + 
