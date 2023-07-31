@@ -1,0 +1,9 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Sander
+    given-names: Louis-Marvin
+    orcid: https://orcid.org/0000-0003-3487-5238
+title: Code documentation - Master's Thesis: Muntjacs invading Germany – Potential distribution of the small Deer (Cervidae) species Reeves’ Muntjac (Muntiacus reevesi ) in Germany
+version: v1.0
+date-released: 2023-07-31
